@@ -1,0 +1,29 @@
+{
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.4.0",
+    "jest": "^30.5.1",
+    "ts-jest": "^29.4.12",
+    "tsx": "^4.23.13",
+    "typescript": "^5.3.3"
+  },
+  "name": "agent-treasury",
+  "version": "0.1.0",
+  "description": "AI Agent Financial & Payment Layer",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --testTimeout=30000",
+    "typecheck": "tsc --noEmit",
+    "demo": "tsx src/cli.ts"
+  },
+  "keywords": [
+    "ai-agent",
+    "payment",
+    "treasury",
+    "binance",
+    "x402",
+    "mcp"
+  ]
+}
