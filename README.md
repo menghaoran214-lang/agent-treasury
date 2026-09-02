@@ -13,7 +13,7 @@ Treasury sits between your agents and the outside world of paid resources (marke
 3. **Fair price check** — tier-based range validation
 4. **Security gate** — risk assessment, provider known-check, SEVERE_OVERPRICE guard
 5. **Policy engine** — enforces auto-pay limits, categories, budgets
-6. **Payment** — mock in MVP, Binance x402 in Gate 4
+6. **Payment** — `PaymentProvider` abstraction: `mock` (default) or `binance` via `@binance/agentic-wallet` CLI
 7. **Receipt** — full audit trail with "why selected" reasoning
 8. **Ledger** — searchable history of all purchases (SQLite persistence)
 

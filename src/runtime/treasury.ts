@@ -5,7 +5,7 @@ import { rankProviders } from './valueScore.js';
 import { checkFairPrice, FairPriceResultNew } from './fairPrice.js';
 import { runSecurityGate } from './securityGate.js';
 import { evaluatePolicy } from './policyEngine.js';
-import { mockPayment } from '../adapters/paymentAdapter.js';
+import { executePayment } from '../adapters/paymentAdapter.js';
 import { createReceipt } from './receipt.js';
 import { addLedgerEntry, ledger } from './ledger.js';
 import type { Receipt } from '../domain/types.js';
@@ -76,9 +76,10 @@ export async function runTreasury(
 
   // 6. Payment if auto
   let paymentRef: string | undefined;
+  let paymentProv: 'mock' | 'binance' = 'mock';
   if (approvalType === AT.AUTO) {
-    const result = await mockPayment(request, selectedOffer, approvalType);
-    if (result.success) { paymentRef = result.reference; status = PS.COMPLETED; }
+    const result = await executePayment(request, selectedOffer, approvalType);
+    if (result.success) { paymentRef = result.reference; paymentProv = result.provider; status = PS.COMPLETED; }
     else status = PS.FAILED;
   }
 
@@ -94,6 +95,7 @@ export async function runTreasury(
     policyDecision,
     approvalType,
     paymentReference: paymentRef,
+    paymentProvider: paymentProv,
     status,
   });
 

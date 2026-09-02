@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.0] — 2026-09-02
+
+### Added
+- `src/adapters/paymentAdapter.ts` — `PaymentProvider` interface + `executePayment()` dispatcher
+- `src/adapters/binancePaymentProvider.ts` — Binance Agentic Wallet provider (`baw wallet send`)
+- Payment idempotency: same `purchase_id` cannot be charged twice (in-memory, process-scoped)
+- `paymentProvider` field in receipt — `mock` or `binance`
+- `binancePaymentProvider` exports: `markPurchaseIdPaid()`, `isPurchaseIdPaid()`, `clearPaidId()`
+- `.env.example` — documents all `TREASURY_*` and `BAW_*` env vars
+
+### Changed
+- `treasury.ts` — now calls `executePayment()` (dispatcher) instead of `mockPayment()` directly
+- `receipt.ts` — `createReceipt()` accepts optional `paymentProvider` field; defaults to `'mock'`
+- `tests/integration-sqlite.ts` — updated to use `executePayment` instead of `mockPayment`
+- `SKILL.md` — added FAILED state handling, Payment Provider section, rules 8/9 (no fake payment, no direct Binance)
+
+### Security
+- Vendor address and amount validated before calling `baw wallet send`
+- Idempotency guard prevents double-charge on retry
+- `baw` CLI handles key signing — Treasury never sees private keys
+- No secrets in code or test fixtures
+
 ## [0.2.0] — 2026-09-02
 
 ### Added

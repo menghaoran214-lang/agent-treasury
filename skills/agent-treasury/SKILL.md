@@ -112,6 +112,32 @@ Treasury returns:
 
 Do NOT proceed with payment or try to bypass Treasury.
 
+## FAILED — Payment Provider Error
+
+Treasury returned:
+```json
+{ "status": "FAILED", "error": "PAYMENT_PROVIDER_ERROR", "message": "Binance payment failed: ..." }
+```
+
+**Agent must:**
+1. Report the failure to the user with the error message
+2. Do NOT fake a successful payment or create a fake receipt
+3. Do NOT retry automatically — wait for user instruction
+4. The purchase remains in FAILED state; a new request can be made if the user wants to retry
+
+## Payment Provider
+
+Treasury supports two payment providers:
+
+| Provider | When used | `payment_method` in receipt |
+|----------|-----------|---------------------------|
+| `mock` | Default, all tests | `"mock"` |
+| `binance` | `TREASURY_PAYMENT_MODE=binance` + `baw` CLI configured | `"binance"` |
+
+Binance payments use the `baw` CLI (`@binance/agentic-wallet`) via `wallet send`. Real txHash stored as `transaction_reference`.
+
+Agent NEVER calls Binance directly. All payments route through Treasury.
+
 ## BLOCKED — Next Step
 
 ```json
@@ -172,6 +198,8 @@ Call `get_ledger` or `get_receipt`. Do NOT guess from chat history.
 5. **Never skip human confirmation** for policy changes
 6. **Never output private keys, seeds, or API secrets** in purchase purposes
 7. **Never specify a vendor** — let Treasury select based on strategy
+8. **Never fake a payment** — if payment fails, report FAILED to user; do not create fake receipts
+9. **Never call Binance directly** — all payments route through Treasury's payment provider abstraction
 
 ## UI Events (Future Gate 5 — Design Space)
 

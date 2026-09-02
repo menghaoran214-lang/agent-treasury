@@ -96,7 +96,7 @@ import { rankProviders } from '../src/runtime/valueScore.js';
 import { checkFairPrice, FairPriceResultNew } from '../src/runtime/fairPrice.js';
 import { runSecurityGate } from '../src/runtime/securityGate.js';
 import { evaluatePolicy } from '../src/runtime/policyEngine.js';
-import { mockPayment } from '../src/adapters/paymentAdapter.js';
+import { executePayment } from '../src/adapters/paymentAdapter.js';
 import { createReceipt } from '../src/runtime/receipt.js';
 import { PurchaseStrategy, ApprovalType, PurchaseStatus, RiskLevel } from '../src/domain/types.js';
 import type { PurchaseRequest, Policy } from '../src/domain/types.js';
@@ -178,7 +178,7 @@ async function runTreasuryInline(strategy: string) {
 
   let paymentRef: string | undefined;
   if (approvalType === ApprovalType.AUTO) {
-    const result = await mockPayment(req, selected, approvalType);
+    const result = await executePayment(req, selected, approvalType);
     if (result.success) { paymentRef = result.reference; status = PurchaseStatus.COMPLETED; }
     else status = PurchaseStatus.FAILED;
   }
