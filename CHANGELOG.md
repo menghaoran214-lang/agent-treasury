@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.5.0] — 2026-09-02
+
+### Added
+- `PaymentState` enum: `unprocessed | processing | completed | failed | unknown`
+- `PaymentProviderResult` interface — replaces `PaymentResult`, includes `payment_state`
+- `payment_records` SQLite table — persistent payment idempotency (survives process restart)
+- `sqliteStorage.savePaymentRecord()` / `getPaymentRecord()` — CRUD for payment state
+- `payment_state` field in receipt — explicit payment state machine
+- `binancePaymentProvider.ts` — **hardened**: `execFile` (no shell injection), recipient/amount/asset/chain validation, `UNKNOWN` state on network errors, BSC/USDC-only constraint
+- `tests/gate45-tests.ts` — 17/17 tests covering idempotency, state machine, hardening, security
+
+### Changed
+- `binancePaymentProvider.ts` — now checks SQLite for prior payment record before executing
+- `PaymentProvider.execute()` return type — `PaymentResult` → `PaymentProviderResult`
+- `createReceipt()` — accepts `paymentState` parameter
+
+### Security
+- Shell injection: `exec()` → `execFile()` with explicit arg array
+- Recipient: addresses from approved vendor registry, agent cannot override
+- Amount: validated against policy-approved amount before payment
+- Asset: BSC mainnet only (chainId 56/97), USDC (BSC USDT address)
+- UNKNOWN state: network errors cannot be retried automatically — requires human inspection
+- No secrets in payment_records raw_response field
+
 ## [0.4.0] — 2026-09-02
 
 ### Added

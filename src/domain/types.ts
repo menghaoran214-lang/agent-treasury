@@ -45,6 +45,32 @@ export const PurchaseStatus = {
 } as const;
 export type PurchaseStatus = (typeof PurchaseStatus)[keyof typeof PurchaseStatus];
 
+// Payment record states — explicit state machine
+export const PaymentState = {
+  // Payment not yet initiated for this purchase
+  UNPROCESSED: 'unprocessed',
+  // Payment initiated, awaiting blockchain confirmation
+  PROCESSING: 'processing',
+  // Payment confirmed on-chain
+  COMPLETED: 'completed',
+  // Payment failed with known error (safe to retry after human review)
+  FAILED: 'failed',
+  // Payment outcome unknown (timeout/interrupt) — do not auto-retry
+  UNKNOWN: 'unknown',
+} as const;
+export type PaymentState = (typeof PaymentState)[keyof typeof PaymentState];
+
+// Result returned by PaymentProvider.execute() — includes explicit payment state
+export interface PaymentProviderResult {
+  success: boolean;
+  provider: 'mock' | 'binance';
+  payment_state: PaymentState;
+  reference?: string;       // txHash or mock reference
+  message: string;
+  raw_response?: unknown;   // provider's raw response for audit
+  idempotent_reuse?: boolean;
+}
+
 export const FairPriceResult = {
   PASS: 'pass',
   PRICE_ANOMALY: 'price_anomaly',
@@ -141,6 +167,7 @@ export interface Receipt {
   risk: RiskLevel;
   approval_type: ApprovalType;
   payment_method: string;
+  payment_state?: string;
   transaction_reference?: string;
   status: PurchaseStatus;
   result: string;

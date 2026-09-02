@@ -66,6 +66,20 @@ const _db = (() => {
     receipt_json    TEXT NOT NULL,
     created_at      TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS payment_records (
+    purchase_id          TEXT PRIMARY KEY,
+    provider             TEXT NOT NULL DEFAULT 'mock',
+    payment_state        TEXT NOT NULL DEFAULT 'unprocessed',
+    reference           TEXT,
+    amount              REAL,
+    currency            TEXT,
+    vendor_id           TEXT,
+    vendor_name         TEXT,
+    raw_response        TEXT,
+    idempotent_reuse    INTEGER NOT NULL DEFAULT 0,
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+  );
 `);
   return db;
 })();
@@ -217,5 +231,66 @@ export const sqliteStorage = {
 
   clearLedgerEntries(): void {
     _db.prepare('DELETE FROM ledger_entries').run();
+  },
+
+  // ─── Payment Records ─────────────────────────────────────────────────────
+
+  savePaymentRecord(data: {
+    purchase_id: string;
+    provider: string;
+    payment_state: string;
+    reference?: string;
+    amount?: number;
+    currency?: string;
+    vendor_id?: string;
+    vendor_name?: string;
+    raw_response?: unknown;
+    idempotent_reuse?: boolean;
+  }) {
+    const now = new Date().toISOString();
+    _db.prepare(`
+      INSERT OR REPLACE INTO payment_records
+        (purchase_id, provider, payment_state, reference, amount, currency,
+         vendor_id, vendor_name, raw_response, idempotent_reuse, created_at, updated_at)
+      VALUES
+        (:purchase_id, :provider, :payment_state, :reference, :amount, :currency,
+         :vendor_id, :vendor_name, :raw_response, :idempotent_reuse, :created_at, :updated_at)
+    `).run({
+      purchase_id: data.purchase_id,
+      provider: data.provider,
+      payment_state: data.payment_state,
+      reference: data.reference ?? null,
+      amount: data.amount ?? null,
+      currency: data.currency ?? null,
+      vendor_id: data.vendor_id ?? null,
+      vendor_name: data.vendor_name ?? null,
+      raw_response: data.raw_response != null ? JSON.stringify(data.raw_response) : null,
+      idempotent_reuse: data.idempotent_reuse ? 1 : 0,
+      created_at: now,
+      updated_at: now,
+    });
+  },
+
+  getPaymentRecord(purchaseId: string): {
+    purchase_id: string;
+    provider: string;
+    payment_state: string;
+    reference: string | null;
+    amount: number | null;
+    currency: string | null;
+    vendor_id: string | null;
+    vendor_name: string | null;
+    raw_response: unknown | null;
+    idempotent_reuse: boolean;
+    created_at: string;
+    updated_at: string;
+  } | null {
+    const row = _db.prepare('SELECT * FROM payment_records WHERE purchase_id = ?').get(purchaseId) as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return {
+      ...row,
+      idempotent_reuse: Boolean(row.idempotent_reuse),
+      raw_response: row.raw_response ? JSON.parse(row.raw_response as string) : null,
+    } as ReturnType<typeof sqliteStorage.getPaymentRecord>;
   },
 };

@@ -77,10 +77,15 @@ export async function runTreasury(
   // 6. Payment if auto
   let paymentRef: string | undefined;
   let paymentProv: 'mock' | 'binance' = 'mock';
+  let paymentState: string = 'unprocessed';
   if (approvalType === AT.AUTO) {
     const result = await executePayment(request, selectedOffer, approvalType);
-    if (result.success) { paymentRef = result.reference; paymentProv = result.provider; status = PS.COMPLETED; }
-    else status = PS.FAILED;
+    if (result.success) { paymentRef = result.reference; paymentProv = result.provider; paymentState = result.payment_state; status = PS.COMPLETED; }
+    else {
+      paymentProv = result.provider;
+      paymentState = result.payment_state;
+      status = result.payment_state === 'unknown' ? PS.FAILED : PS.FAILED;
+    }
   }
 
   // 7. Receipt
@@ -96,6 +101,7 @@ export async function runTreasury(
     approvalType,
     paymentReference: paymentRef,
     paymentProvider: paymentProv,
+    paymentState,
     status,
   });
 

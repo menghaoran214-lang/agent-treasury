@@ -12,6 +12,7 @@ export function createReceipt(params: {
   approvalType: ApprovalType;
   paymentReference?: string;
   paymentProvider?: 'mock' | 'binance';
+  paymentState?: string;
   status: PurchaseStatus;
 }): Receipt {
   return {
@@ -30,6 +31,7 @@ export function createReceipt(params: {
     risk: params.securityCheck.risk,
     approval_type: params.approvalType,
     payment_method: params.paymentProvider || 'mock',
+    payment_state: params.paymentState,
     transaction_reference: params.paymentReference,
     status: params.status,
     result: params.status === 'completed' ? 'SUCCESS' : params.status.toUpperCase(),

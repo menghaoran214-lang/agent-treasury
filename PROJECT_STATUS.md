@@ -1,6 +1,6 @@
 # Project Status
 
-## Current Stage: Gate 4 — Binance x402 / Agentic Wallet ✅ COMPLETE
+## Current Stage: Gate 4.5 — Real Payment Proof & Demo Hardening ✅ COMPLETE
 
 ### Gate Status
 | Gate | 内容 | 状态 |
@@ -8,21 +8,30 @@
 | 1 | MVP Vertical Slice | ✅ Done |
 | 2 | MCP Server + SQLite Persistence | ✅ Done |
 | 3 | Treasury Skill | ✅ Done |
-| 4 | Binance x402 / Agentic Wallet | ✅ COMPLETE |
+| 4 | Binance x402 / Agentic Wallet | ✅ Done |
+| 4.5 | Real Payment Proof & Demo Hardening | ✅ Done |
+| 5 | Champion Judge Demo | 🔜 Next |
 
-## Gate 4 Summary
+## Gate 4.5 Summary
 
-**Binance Integration**: `@binance/agentic-wallet` (`baw` CLI) — `wallet send` for USDC payments on BSC.
+**Payment State Machine**: `UNPROCESSED → PROCESSING → COMPLETED | FAILED | UNKNOWN`
 
-**Real / Testnet / Sandbox / Mock**: `mock` (default) + `binance` (opt-in via env var). BAW uses real BSC mainnet when `TREASURY_PAYMENT_MODE=binance`. No testnet/sandbox available for BAW.
+**Persistent Idempotency**: `payment_records` SQLite table — survives process restart.
+- COMPLETED: returns `idempotent_reuse=true`, no re-charge
+- PROCESSING: returns `UNKNOWN`, no re-execute
+- UNKNOWN: requires manual inspection — no auto retry
+- FAILED: safe to retry after human review
 
-**Key Files**:
-- `src/adapters/paymentAdapter.ts` — `PaymentProvider` interface + `executePayment()` dispatcher
-- `src/adapters/binancePaymentProvider.ts` — `binancePaymentProvider` + idempotency
-- `src/runtime/treasury.ts` — uses `executePayment()` (injectable provider)
-- `.env.example` — all env vars documented
+**Security Hardening**:
+- CLI injection: `exec()` → `execFile()` with arg array
+- Recipient: vendor address registry, agent cannot override
+- Amount: validated before payment
+- Asset: BSC mainnet only (56/97), USDC only
+- UNKNOWN state on network errors — prevents double-charge
 
-**Payment Flow**: `Treasury → Policy → PaymentProvider → baw wallet send → txHash → Receipt → Ledger`
+**Demo Mode**: `TREASURY_PAYMENT_MODE=mock` — full Treasury flow, deterministic, no real money.
+
+**Real Binance E2E**: PENDING — requires user approval + BAW wallet auth.
 
 ## Frozen Values
 
@@ -36,6 +45,7 @@
 | Provider B (MarketInsight Pro) | $0.20, quality=91 |
 | Provider C (UltraFeed) | $0.32, quality=98 |
 | Receipt DTO | Frozen |
+| PaymentState enum | Frozen |
 
 ## Technology
 
@@ -46,7 +56,7 @@ TypeScript 5.5.4, Node.js 22, ES2022 modules (ESM), `@modelcontextprotocol/sdk` 
 1. `@ts-ignore` in `sqliteStorage.ts` — `@types/better-sqlite3` uses `export =` (CJS) + `moduleResolution: bundler` → known limitation, runtime verified
 2. Jest `--forceExit` — ts-jest ESM + better-sqlite3 not explicitly closed
 3. `import.meta` typecheck in `skill-verification.ts` — tsconfig `module: ES2022` issue, runs fine with tsx
-4. Idempotency in-memory only — process restart clears; add SQLite persistence when multi-process needed
+4. `mockPaymentProvider` is stateless for idempotency — only `binancePaymentProvider` enforces persistent idempotency
 
 ## Environment Variables
 
