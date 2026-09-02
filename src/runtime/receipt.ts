@@ -15,6 +15,7 @@ export function createReceipt(params: {
 }): Receipt {
   return {
     id: `rcpt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    purchase_id: params.request.id,
     requester: params.request.requester,
     purpose: params.request.purpose,
     resource_type: params.request.resource_type,

@@ -1,37 +1,49 @@
 import type { Receipt, LedgerEntry, Policy, PurchaseRequest } from '../domain/types.js';
+import { sqliteStorage } from '../storage/index.js';
 
-class Ledger {
-  private entries: LedgerEntry[] = [];
+// Ledger backed by SQLite — survives process restart
+export const ledger = {
+  add(entry: LedgerEntry, purchaseId: string): void {
+    sqliteStorage.addLedgerEntry(entry, purchaseId);
+  },
 
-  add(entry: LedgerEntry): void { this.entries.push(entry); }
-  all(): LedgerEntry[] { return [...this.entries]; }
-  byRequester(requester: string): LedgerEntry[] { return this.entries.filter(e => e.receipt.requester === requester); }
+  all(): LedgerEntry[] {
+    return sqliteStorage.getAllEntries();
+  },
+
+  byRequester(requester: string): LedgerEntry[] {
+    return this.all().filter(e => e.receipt.requester === requester);
+  },
 
   todayTotal(): number {
     const today = new Date().toDateString();
-    return this.entries
+    return this.all()
       .filter(e => new Date(e.receipt.created_at).toDateString() === today)
       .reduce((s, e) => s + e.receipt.amount, 0);
-  }
+  },
 
   stats() {
-    const total        = this.entries.reduce((s, e) => s + e.receipt.amount, 0);
-    const autoApproved = this.entries.filter(e => e.receipt.approval_type === 'auto').length;
-    const humanApproved= this.entries.filter(e => e.receipt.approval_type === 'human_required').length;
-    const rejected     = this.entries.filter(e => e.receipt.status === 'rejected' || e.receipt.status === 'blocked').length;
-    const byCategory: Record<string, number> = {};
-    for (const e of this.entries) {
-      const cat = e.receipt.resource_type;
-      byCategory[cat] = (byCategory[cat] ?? 0) + e.receipt.amount;
-    }
-    return { total, autoApproved, humanApproved, rejected, byCategory, totalCount: this.entries.length };
-  }
+    return sqliteStorage.stats();
+  },
 
-  clear(): void { this.entries = []; }
-}
+  clear(): void {
+    // Clear ledger entries directly — purchases/policy/receipts preserved
+    sqliteStorage.clearLedgerEntries();
+  },
 
-export const ledger = new Ledger();
+  getReceipt(id: string): Receipt | null {
+    return sqliteStorage.getReceipt(id);
+  },
+};
 
-export function addLedgerEntry(params: { receipt: Receipt; policy: Policy; request: PurchaseRequest }) {
-  ledger.add({ receipt: params.receipt, policy_snapshot: params.policy, request_snapshot: params.request });
+export function addLedgerEntry(params: {
+  receipt: Receipt;
+  policy: Policy;
+  request: PurchaseRequest;
+  purchaseId: string;
+}): void {
+  ledger.add(
+    { receipt: params.receipt, policy_snapshot: params.policy, request_snapshot: params.request },
+    params.purchaseId
+  );
 }

@@ -9,6 +9,7 @@ export const ResourceType = {
   MCP: 'mcp',
   SAAS: 'saas',
   OTHER: 'other',
+  SUSPICIOUS_DATA: 'suspicious_data',
 } as const;
 export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
 
@@ -126,6 +127,7 @@ export interface PolicyDecision {
 
 export interface Receipt {
   id: string;
+  purchase_id: string;
   requester: string;
   purpose: string;
   resource_type: ResourceType;
@@ -155,7 +157,7 @@ export interface VendorSelection {
   selected: ProviderOffer;
   all_candidates: ProviderOffer[];
   value_scores: ValueScore[];
-  fair_price_check: { result: FairPriceResult; median_price: number; deviation_pct: number };
+  fair_price_check: { result: FairPriceResult; severity: 'normal' | 'moderate' | 'severe'; median_price: number; deviation_pct: number };
   security_check: SecurityCheckResult;
   policy_decision: PolicyDecision;
   final_approval: ApprovalType;

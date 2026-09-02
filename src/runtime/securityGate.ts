@@ -8,6 +8,14 @@ export interface SecurityGateInput {
   currency: string;
 }
 
+/**
+ * MVP security gate — pluggable adapter for real providers (GoPlus, Blockaid, etc.).
+ * Rules:
+ *   trust_level = HIGH     → BLOCKED (known_risk_flag)
+ *   amount >= 1000 USDC   → BLOCKED (amount_policy breach)
+ *   provider not in known list → MEDIUM (needs review)
+ *   else → LOW
+ */
 export function runSecurityGate(input: SecurityGateInput): SecurityCheckResult {
   const known_ids = new Set(MOCK_PROVIDERS.map(p => p.provider_id));
 
@@ -15,15 +23,24 @@ export function runSecurityGate(input: SecurityGateInput): SecurityCheckResult {
   const destination_match = true;   // MVP: always pass
   const amount_policy     = input.amount < 1000;
   const endpoint_valid    = true;   // MVP: always pass
-  const known_risk_flag   = input.provider.trust_level === RiskLevel.HIGH;
+  const known_risk_flag  = input.provider.trust_level === RiskLevel.HIGH;
 
-  let risk: RL = RiskLevel.LOW;
-  if (!amount_policy || known_risk_flag) risk = RiskLevel.HIGH;
-  else if ([!provider_known, !destination_match, !endpoint_valid].filter(Boolean).length >= 2) risk = RiskLevel.MEDIUM;
+  let risk: RL;
+  let reason: string;
 
-  const reason = risk === RiskLevel.LOW
-    ? 'All checks passed'
-    : `Flags: ${[!provider_known && 'provider_unknown', !destination_match && 'destination_mismatch', !amount_policy && 'amount_exceeded', !endpoint_valid && 'endpoint_invalid', known_risk_flag && 'known_risk'].filter(Boolean).join(', ')}`;
+  if (known_risk_flag) {
+    risk = RiskLevel.HIGH;
+    reason = 'trust_level=HIGH — known suspicious provider';
+  } else if (!amount_policy) {
+    risk = RiskLevel.HIGH;
+    reason = 'amount exceeds 1000 USDC limit';
+  } else if (!provider_known) {
+    risk = RiskLevel.MEDIUM;
+    reason = 'provider not in known list — manual review recommended';
+  } else {
+    risk = RiskLevel.LOW;
+    reason = 'All checks passed';
+  }
 
   return { provider_known, destination_match, amount_policy, endpoint_valid, known_risk_flag, risk, reason };
 }

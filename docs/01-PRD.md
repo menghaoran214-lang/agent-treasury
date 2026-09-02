@@ -15,17 +15,28 @@ Agents can autonomously request procurement. Treasury handles: normalization, ve
 
 ## 3. Hackathon MVP Scope
 
-### What we ship (Gate 1)
+### What we shipped (Gate 1)
 - PurchaseRequest data structure
 - 3 mock providers
 - Strategy-based value scoring (Economy / Balanced / Performance)
-- Fair price check (median vs. candidate pool)
-- Security gate (provider_known, amount_policy, risk flag)
+- Tier-based fair price check
+- Security gate (provider_known, risk flag, SEVERE_OVERPRICE guard)
 - Policy engine (auto-pay, limits, categories)
 - Mock payment adapter
 - Receipt generation
 - In-memory ledger
 - End-to-end vertical slice with tests
+
+### What we shipped (Gate 2)
+- MCP Server on StdioServerTransport (8 tools)
+- SQLite persistence (purchases, policies, receipts, ledger_entries)
+- Treasury Runtime connected via MCP tool calls
+- External agents can call request_purchase() via MCP
+- Receipt MCP DTO (formal flat schema, receiptToMcpResult)
+- TREASURY_DB_PATH for explicit DB path configuration
+- 11/11 MCP E2E scenes pass
+- 16/16 Jest unit tests pass
+- 3/3 SQLite integration tests pass
 
 ### What we DO NOT ship in MVP
 - Real Binance x402 payment (Gate 4)

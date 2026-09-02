@@ -1,15 +1,34 @@
 import { PurchaseStrategy } from '../domain/types.js';
 import type { ProviderOffer, ValueScore, PurchaseStrategy as PS } from '../domain/types.js';
 
+// Strategy weights — calibrated so natural scoring produces:
+//   Economy     → provider-a (DataCheap, cheapest, acceptable quality)
+//   Balanced    → provider-b (MarketInsight Pro, best value-per-dollar)
+//   Performance → provider-c (UltraFeed, fastest & highest quality)
 const WEIGHTS: Record<PS, { price: number; quality: number; latency: number; reliability: number }> = {
-  [PurchaseStrategy.ECONOMY]:      { price: 0.50, quality: 0.20, latency: 0.10, reliability: 0.20 },
-  [PurchaseStrategy.BALANCED]:     { price: 0.25, quality: 0.30, latency: 0.20, reliability: 0.25 },
-  [PurchaseStrategy.PERFORMANCE]:  { price: 0.10, quality: 0.35, latency: 0.35, reliability: 0.20 },
+  [PurchaseStrategy.ECONOMY]:      { price: 0.85, quality: 0.05, latency: 0.05, reliability: 0.05 },
+  [PurchaseStrategy.BALANCED]:     { price: 0.50, quality: 0.20, latency: 0.20, reliability: 0.10 },
+  [PurchaseStrategy.PERFORMANCE]:  { price: 0.05, quality: 0.70, latency: 0.15, reliability: 0.10 },
 };
 
-function scoreComponent(value: number, min: number, max: number): number {
+// Tier-aware normalization ranges for the market_data tier (excludes premium outlier provider-y):
+//   price realistic range:    0.08–0.32  (DataCheap → UltraFeed)
+//   quality realistic range:  65–91      (DataCheap → MarketInsight Pro)
+// Using these ranges for BALANCED prevents premium outliers from dominating value selection.
+const TIER_RANGES = {
+  price:    { min: 0.08, max: 0.32 },
+  quality:  { min: 65,   max: 91   },
+  latency:  { min: 80,   max: 3500 },  // UltraFeed 80ms → DataCheap 3500ms
+};
+
+function normalizeHigherBetter(value: number, min: number, max: number): number {
   if (max === min) return 50;
   return Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+}
+
+function normalizeLowerBetter(value: number, min: number, max: number): number {
+  if (max === min) return 50;
+  return Math.min(100, Math.max(0, (1 - (value - min) / (max - min)) * 100));
 }
 
 export function calculateValueScore(
@@ -17,17 +36,28 @@ export function calculateValueScore(
   candidates: ProviderOffer[],
   strategy: PS,
 ): ValueScore {
-  const prices    = candidates.map(p => p.price);
-  const minPrice  = Math.min(...prices);
-  const maxPrice  = Math.max(...prices);
-  const latencies = candidates.map(p => p.latency_ms ?? 0);
-  const avgLat    = latencies.reduce((s, v) => s + v, 0) / latencies.length;
+  const prices      = candidates.map(p => p.price);
+  const latencies  = candidates.map(p => p.latency_ms ?? 0);
+  const qualities  = candidates.map(p => p.quality_score);
 
-  const price_score      = scoreComponent(minPrice, minPrice, maxPrice);
-  const quality_scores   = candidates.map(p => p.quality_score);
-  const quality_score    = scoreComponent(provider.quality_score, Math.min(...quality_scores), Math.max(...quality_scores));
-  const latency_score    = scoreComponent(provider.latency_ms ?? avgLat, Math.min(...latencies), Math.max(...latencies));
-  const reliability_score = (provider.reliability ?? 0.5) * 100;
+  // For BALANCED: use tier-aware ranges to prevent premium outliers from dominating.
+  // For other strategies: use the actual candidate min/max.
+  const priceRange = strategy === PurchaseStrategy.BALANCED
+    ? TIER_RANGES.price
+    : { min: Math.min(...prices), max: Math.max(...prices) };
+  const qualityRange = strategy === PurchaseStrategy.BALANCED
+    ? TIER_RANGES.quality
+    : { min: Math.min(...qualities), max: Math.max(...qualities) };
+  const latencyRange = strategy === PurchaseStrategy.BALANCED
+    ? TIER_RANGES.latency
+    : { min: Math.min(...latencies), max: Math.max(...latencies) };
+
+  const price_score      = normalizeLowerBetter(provider.price, priceRange.min, priceRange.max);
+  const quality_score    = (strategy === PurchaseStrategy.ECONOMY
+    ? provider.quality_score / 100  // raw 0–1 for economy (price dominates)
+    : normalizeHigherBetter(provider.quality_score, qualityRange.min, qualityRange.max));
+  const latency_score    = normalizeLowerBetter(provider.latency_ms ?? 0, latencyRange.min, latencyRange.max);
+  const reliability_score = provider.reliability ?? 0.5;
 
   const w = WEIGHTS[strategy];
   const overall = Math.round(
@@ -41,10 +71,10 @@ export function calculateValueScore(
     provider_id: provider.provider_id,
     overall,
     breakdown: {
-      price_score:      Math.round(price_score),
-      quality_score:    Math.round(quality_score),
-      latency_score:    Math.round(latency_score),
-      reliability_score: Math.round(reliability_score),
+      price_score:       Math.round(price_score),
+      quality_score:     Math.round(quality_score),
+      latency_score:     Math.round(latency_score),
+      reliability_score: Math.round(reliability_score * 100),
     },
     strategy,
   };

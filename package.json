@@ -1,11 +1,14 @@
 {
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.4.0",
+    "better-sqlite3": "^13.0.3",
     "jest": "^30.5.1",
     "ts-jest": "^29.4.12",
     "tsx": "^4.23.13",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.4"
   },
   "name": "agent-treasury",
   "version": "0.1.0",
@@ -15,8 +18,10 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config jest.config.cjs --testTimeout=30000",
+    "test:mcp": "npx tsx tests/mcp-e2e.ts",
+    "test:integration": "npx tsx tests/integration-sqlite.ts",
     "typecheck": "tsc --noEmit",
-    "demo": "tsx src/cli.ts"
+    "demo": "npx tsx src/cli.ts"
   },
   "keywords": [
     "ai-agent",

@@ -5,3 +5,9 @@ coverage/
 .env
 .env.local
 .DS_Store
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
+data/test-integration-*.db
