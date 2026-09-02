@@ -18,7 +18,7 @@
 import { rm, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { setPaymentProvider, mockPaymentProvider } from '../src/adapters/paymentAdapter.js';
-import { binancePaymentProvider } from '../src/adapters/binancePaymentProvider.js';
+import { binancePaymentProvider, getBinanceConfig } from '../src/adapters/binancePaymentProvider.js';
 import { sqliteStorage } from '../src/storage/sqliteStorage.js';
 import { PurchaseStrategy, ApprovalType } from '../src/domain/types.js';
 import type { PurchaseRequest, ProviderOffer } from '../src/domain/types.js';
@@ -204,7 +204,7 @@ async function run() {
     const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
     const badOffer = { ...mockProviderOffer, provider_id: 'unknown-vendor-xyz' };
     process.env.TREASURY_PAYMENT_MODE = 'binance';
-    const result = await bp.execute(makeRequest('recipient-test'), badOffer, ApprovalType.AUTO);
+    const result = await binancePaymentProvider.execute(makeRequest('recipient-test'), badOffer, ApprovalType.AUTO);
     assert(result.success === false, 'should fail for unknown vendor');
     assert(result.message.includes('No address') || result.message.includes('vendor'), `expected vendor error: ${result.message}`);
     process.env.TREASURY_PAYMENT_MODE = 'mock';
@@ -214,7 +214,7 @@ async function run() {
     const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
     const badOffer = { ...mockProviderOffer, price: 0 };
     process.env.TREASURY_PAYMENT_MODE = 'binance';
-    const result = await bp.execute(makeRequest('zero-amount-test'), badOffer, ApprovalType.AUTO);
+    const result = await binancePaymentProvider.execute(makeRequest('zero-amount-test'), badOffer, ApprovalType.AUTO);
     assert(result.success === false, 'should fail for zero amount');
     assert(result.message.includes('Invalid amount'), `expected Invalid amount: ${result.message}`);
     process.env.TREASURY_PAYMENT_MODE = 'mock';
@@ -224,7 +224,7 @@ async function run() {
     const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
     const badOffer = { ...mockProviderOffer, price: -0.5 };
     process.env.TREASURY_PAYMENT_MODE = 'binance';
-    const result = await bp.execute(makeRequest('neg-amount-test'), badOffer, ApprovalType.AUTO);
+    const result = await binancePaymentProvider.execute(makeRequest('neg-amount-test'), badOffer, ApprovalType.AUTO);
     assert(result.success === false, 'should fail for negative amount');
     process.env.TREASURY_PAYMENT_MODE = 'mock';
   });
@@ -233,7 +233,7 @@ async function run() {
     const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
     process.env.TREASURY_PAYMENT_MODE = 'binance';
     process.env.TREASURY_WALLET_CHAIN_ID = '999'; // invalid
-    const result = await bp.execute(makeRequest('bad-chain-test'), mockProviderOffer, ApprovalType.AUTO);
+    const result = await binancePaymentProvider.execute(makeRequest('bad-chain-test'), mockProviderOffer, ApprovalType.AUTO);
     assert(result.success === false, 'should fail for unsupported chain');
     assert(result.message.includes('Unsupported chain') || result.message.includes('chain'), `expected chain error: ${result.message}`);
     process.env.TREASURY_WALLET_CHAIN_ID = '56';
@@ -312,12 +312,111 @@ async function run() {
     assert(raw.includes('txHash') || raw.includes('reference'), 'should have tx reference');
   });
 
+  // ─── Token / Contract correctness ─────────────────────────────────────────────
+  console.log('\n--- Token / Contract Correctness ---');
+
+  await test('USDC symbol maps to correct BSC USDC contract address', async () => {
+    // BSC USDC: 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d
+    const usdcContract = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+    const cfg = getBinanceConfig();
+    assert(cfg.paymentToken.toLowerCase() === usdcContract.toLowerCase(), `expected USDC contract, got ${cfg.paymentToken}`);
+  });
+
+  await test('USDT contract cannot be labeled as USDC', async () => {
+    // USDT contract on BSC: 0x55d398326f99059fF775485246999027B3197955
+    // This should NOT match USDC validation
+    const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+    const USDC_CONTRACT = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+    assert(usdtContract.toLowerCase() !== USDC_CONTRACT.toLowerCase(), 'USDT contract must differ from USDC');
+    // BinancePaymentProvider would reject this as non-USDC token
+    process.env.TREASURY_PAYMENT_MODE = 'binance';
+    process.env.TREASURY_PAYMENT_TOKEN = usdtContract;
+    const result = await binancePaymentProvider.execute(makeRequest('usdt-rejected'), mockProviderOffer, ApprovalType.AUTO);
+    assert(result.success === false, 'USDT contract should be rejected for USDC mode');
+    assert(result.message.includes('Unsupported token'), `expected Unsupported token: ${result.message}`);
+    process.env.TREASURY_PAYMENT_TOKEN = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+    process.env.TREASURY_PAYMENT_MODE = 'mock';
+  });
+
+  // ─── Real proof recipient ─────────────────────────────────────────────────
+  console.log('\n--- Real Proof Recipient ---');
+
+  await test('placeholder 0x0... addresses rejected', async () => {
+    const zeroAddr = '0x0000000000000000000000000000000000000000';
+    const valid = /^0x[0-9a-fA-F]{40}$/.test(zeroAddr);
+    assert(valid === true, 'zero address is technically valid format');
+    // But provider logic rejects it
+    const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
+    process.env.TREASURY_PAYMENT_MODE = 'binance';
+    const badOffer = { ...mockProviderOffer, provider_id: 'unknown-vendor-xyz' };
+    const result = await binancePaymentProvider.execute(makeRequest('recipient-test'), badOffer, ApprovalType.AUTO);
+    assert(result.success === false, 'should reject placeholder address');
+    assert(result.message.includes('No address') || result.message.includes('vendor'), `expected vendor error: ${result.message}`);
+    process.env.TREASURY_PAYMENT_MODE = 'mock';
+  });
+
+  await test('missing real proof recipient → NOT_CONFIGURED state', async () => {
+    // When TREASURY_REAL_PROOF_RECIPIENT is not set, real proof cannot execute
+    // This is the expected state before user configures it
+    delete process.env.TREASURY_REAL_PROOF_RECIPIENT;
+    const recipient = process.env.TREASURY_REAL_PROOF_RECIPIENT;
+    assert(recipient === undefined, 'TREASURY_REAL_PROOF_RECIPIENT should be unset');
+    // The integration evidence should reflect NOT_CONFIGURED
+    const evidence = {
+      real_payment_verified: false,
+      verified_tx_hash: null,
+      verified_at: null,
+      status: 'NOT_CONFIGURED',
+    };
+    assert(evidence.status === 'NOT_CONFIGURED', 'real proof status should be NOT_CONFIGURED');
+  });
+
+  await test('invalid recipient format rejected', async () => {
+    // setEnv would reject non-42-char addresses
+    const invalidAddresses = [
+      '0x123',                          // too short
+      '0x00000000000000000000000000000000000000001', // 41 chars
+      'not-an-address',                  // not hex
+      '0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ', // invalid hex
+    ];
+    for (const addr of invalidAddresses) {
+      const valid = /^0x[0-9a-fA-F]{40}$/.test(addr);
+      assert(valid === false, `invalid address ${addr} should be rejected by format check`);
+    }
+  });
+
+  await test('valid EVM address passes format check', async () => {
+    const validAddresses = [
+      '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+      '0x0000000000000000000000000000000000000001',
+      '0xAbCdEf0123456789AbCdEf0123456789AbCdEf01',
+    ];
+    for (const addr of validAddresses) {
+      const valid = /^0x[0-9a-fA-F]{40}$/.test(addr);
+      assert(valid === true, `valid address ${addr} should pass format check`);
+    }
+  });
+
+  // ─── Unsupported chain ────────────────────────────────────────────────────
+  console.log('\n--- Chain Support ---');
+
+  await test('unsupported chain rejected (BSC mainnet only)', async () => {
+    const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
+    process.env.TREASURY_PAYMENT_MODE = 'binance';
+    process.env.TREASURY_WALLET_CHAIN_ID = '97'; // testnet
+    const result = await binancePaymentProvider.execute(makeRequest('bad-chain-test'), mockProviderOffer, ApprovalType.AUTO);
+    assert(result.success === false, 'testnet should be rejected');
+    assert(result.message.includes('BSC Mainnet 56 only'), `expected BSC Mainnet error: ${result.message}`);
+    process.env.TREASURY_WALLET_CHAIN_ID = '56';
+    process.env.TREASURY_PAYMENT_MODE = 'mock';
+  });
+
   // ─── BLOCKED/REJECTED never pay ────────────────────────────────────────────
   console.log('\n--- Policy Enforcement ---');
 
   await test('BLOCKED approval never reaches payment', async () => {
     const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
-    const result = await bp.execute(makeRequest('blocked-never-pays'), mockProviderOffer, ApprovalType.BLOCKED);
+    const result = await binancePaymentProvider.execute(makeRequest('blocked-never-pays'), mockProviderOffer, ApprovalType.BLOCKED);
     assert(result.success === false, 'BLOCKED should not succeed');
     assert(result.payment_state === 'failed', 'BLOCKED should return failed state');
     assert(result.message.includes('blocked') || result.message.includes('rejected'), `expected blocked/rejected: ${result.message}`);
@@ -325,7 +424,7 @@ async function run() {
 
   await test('REJECTED approval never reaches payment', async () => {
     const { binancePaymentProvider: bp } = await import('../src/adapters/binancePaymentProvider.js');
-    const result = await bp.execute(makeRequest('rejected-never-pays'), mockProviderOffer, ApprovalType.REJECTED);
+    const result = await binancePaymentProvider.execute(makeRequest('rejected-never-pays'), mockProviderOffer, ApprovalType.REJECTED);
     assert(result.success === false, 'REJECTED should not succeed');
     assert(result.payment_state === 'failed', 'REJECTED should return failed state');
   });

@@ -20,27 +20,40 @@ const execAsync = promisify(execFile);
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-function getBinanceConfig() {
+export function getBinanceConfig() {
   return {
     bawPath: process.env.BAW_CLI_PATH || 'baw',
     chainId: process.env.TREASURY_WALLET_CHAIN_ID || '56',
-    paymentToken: process.env.TREASURY_PAYMENT_TOKEN || '0x55d398326f99059fF775485246999027B3197955',
+    // USDC on BSC mainnet — MUST be this contract, no alternatives in MVP
+    paymentToken: process.env.TREASURY_PAYMENT_TOKEN || '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
     mode: process.env.TREASURY_PAYMENT_MODE || 'mock',
   };
 }
 
 // ─── Vendor address map (approved registry — agent cannot override) ───────────
 // In production these come from vendor registry. Gate 4 demo uses placeholders.
+// These are DEMO addresses — NOT used for real Binance payments.
 const VENDOR_ADDRESSES: Record<string, string> = {
-  'provider-a': '0x0000000000000000000000000000000000000001',
-  'provider-b': '0x0000000000000000000000000000000000000002',
-  'provider-c': '0x0000000000000000000000000000000000000003',
+  'provider-a':    '0x0000000000000000000000000000000000000001',
+  'provider-b':    '0x0000000000000000000000000000000000000002',
+  'provider-c':    '0x0000000000000000000000000000000000000003',
   'provider-overpriced': '0x0000000000000000000000000000000000000004',
-  'provider-y': '0x0000000000000000000000000000000000000005',
+  'provider-y':    '0x0000000000000000000000000000000000000005',
 };
 
 function getVendorAddress(providerId: string): string {
   return VENDOR_ADDRESSES[providerId] ?? '0x0000000000000000000000000000000000000000';
+}
+
+// ─── Real proof recipient — requires explicit TREASURY_REAL_PROOF_RECIPIENT env var ──
+
+function getRealProofRecipient(): string | null {
+  const addr = process.env.TREASURY_REAL_PROOF_RECIPIENT?.trim();
+  if (!addr) return null;
+  // Basic EVM address validation: 42 chars, starts with 0x, not all zeros
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) return null;
+  if (/^0x0+$/.test(addr)) return null; // all zeros
+  return addr;
 }
 
 // ─── Payment state machine ─────────────────────────────────────────────────────
@@ -163,19 +176,21 @@ export const binancePaymentProvider: PaymentProvider = {
     const recipient = getVendorAddress(provider.provider_id);
     const amount = provider.price.toString();
 
+    // BSC mainnet only — no testnet unless explicitly verified with BAW
+    if (cfg.chainId !== '56') {
+      return paymentStateResult(false, 'failed', undefined, `Unsupported chain: ${cfg.chainId} (BSC Mainnet 56 only)`, 'binance');
+    }
+    // USDC contract on BSC — no USDT, no alternatives
+    const USDC_CONTRACT = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+    if (cfg.paymentToken.toLowerCase() !== USDC_CONTRACT.toLowerCase()) {
+      return paymentStateResult(false, 'failed', undefined, `Unsupported token: ${cfg.paymentToken} (BSC USDC only: ${USDC_CONTRACT})`, 'binance');
+    }
     if (provider.price <= 0) {
       return paymentStateResult(false, 'failed', undefined, `Invalid amount: ${provider.price}`, 'binance');
     }
-    if (!recipient || recipient === '0x0000000000000000000000000000000000000000') {
+    // Demo addresses — reject for real payment mode
+    if (recipient === '0x0000000000000000000000000000000000000000') {
       return paymentStateResult(false, 'failed', undefined, `No address for vendor: ${provider.provider_id}`, 'binance');
-    }
-    // ponytail: BSC only, no network override
-    if (cfg.chainId !== '56' && cfg.chainId !== '97') {
-      return paymentStateResult(false, 'failed', undefined, `Unsupported chain: ${cfg.chainId} (only BSC 56/97 allowed)`, 'binance');
-    }
-    // ponytail: USDC only, no token override
-    if (!cfg.paymentToken.includes('USDT') && cfg.paymentToken !== '0x55d398326f99059fF775485246999027B3197955') {
-      return paymentStateResult(false, 'failed', undefined, `Unsupported token: ${cfg.paymentToken} (MVP USDC only)`, 'binance');
     }
 
     // ─── Persist PROCESSING ───────────────────────────────────────────────
