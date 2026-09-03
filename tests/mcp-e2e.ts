@@ -28,7 +28,7 @@ async function connect(): Promise<void> {
     proc = spawn('npx', ['tsx', 'src/mcp/server.ts'], {
       cwd: '/mnt/d/MM/开发/项目/agent-treasury',
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, TREASURY_DB_PATH: DB_PATH },
+      env: { ...process.env, TREASURY_DB_PATH: DB_PATH, TREASURY_TEST_MODE: '1' },
     });
 
     // @ts-ignore — proc.stdout is Node Readable, TS expects web ReadableStream in Node 22
@@ -143,7 +143,7 @@ async function scene6_rejectPurchase(): Promise<boolean> {
   // Create a pending purchase first
   await callTool('propose_policy_change', { auto_pay_limit: 0.05 }); // force human
   const create = await callTool('request_purchase', {
-    requester: 'test-agent', resource_type: 'api',
+    requester: 'test-agent', resource_type: 'market_data',
     purpose: 'API test', requirements: {},
     max_budget: 2, currency: 'USDC', strategy: 'balanced',
   }) as Record<string, unknown>;
@@ -274,6 +274,7 @@ async function main() {
   let persistenceOk = false;
   try {
     proc.kill();
+  await new Promise<void>((resolve) => { proc.on('exit', () => resolve()); setTimeout(resolve, 2000); }); // wait for child to fully exit before next test
     await new Promise(r => setTimeout(r, 500));
 
     // Re-connect with same DB
@@ -288,6 +289,7 @@ async function main() {
   } catch (e) { console.error('[ERR]', e); results.push(['Persistence restart', false]); }
 
   proc.kill();
+  await new Promise<void>((resolve) => { proc.on('exit', () => resolve()); setTimeout(resolve, 2000); }); // wait for child to fully exit before next test
 
   console.log(`\n=== Results: ${passed}/${results.length} passed ===`);
   results.forEach(([n, ok]) => console.log(`  ${ok ? '[PASS]' : '[FAIL]'} ${n}`));

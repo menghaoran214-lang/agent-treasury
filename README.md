@@ -17,6 +17,22 @@ Treasury sits between your agents and the outside world of paid resources (marke
 7. **Receipt** — full audit trail with "why selected" reasoning
 8. **Ledger** — searchable history of all purchases (SQLite persistence)
 
+## Quick Verification
+
+```bash
+npm install
+npm run test:all   # TypeScript + unit + integration + MCP + Gate 5 (sequential)
+```
+
+Individual test suites:
+```bash
+npm run typecheck      # TypeScript — must exit 0
+npm run test           # Unit tests (16/16 Jest)
+npm run test:integration  # Strategy integration (3/3 SQLite)
+npm run test:mcp       # MCP E2E (11/11 scenes)
+npm run test:gate5     # Gate 5 Champion Judge Demo (13/13)
+```
+
 ## Quick Start
 
 ```bash
@@ -106,3 +122,20 @@ TypeScript / Node.js 22 (ES2022 modules). See `docs/02-ARCHITECTURE.md` for ADR.
 | ECONOMY | DataCheap | $0.09 | ✅ PASS |
 | BALANCED | MarketInsight Pro | $0.20 | ✅ PASS |
 | PERFORMANCE | UltraFeed | $0.32 | ✅ PASS |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TREASURY_DB_PATH` | `./data/treasury.db` | SQLite database path |
+| `TREASURY_PAYMENT_MODE` | `mock` | `mock` or `binance` |
+| `TREASURY_TEST_MODE` | `off` | **Test only** — enables E2E test vendor pool (MCP server). Never enable in production. |
+
+## Test Fixtures
+
+| Fixture | Path | Purpose |
+|---------|------|---------|
+| GATE5_VENDORS | `src/providers/mockProviders.ts` | Production Gate 5 demo vendors |
+| STRATEGY_PROVIDERS | `tests/fixtures/strategyProviders.ts` | Unit test strategy calibration |
+| INTEGRATION_VENDORS | `tests/fixtures/integrationVendors.ts` | Strategy integration tests |
+| MCP_TEST_VENDORS | `tests/fixtures/mcpTestVendors.ts` | MCP E2E test fixtures |

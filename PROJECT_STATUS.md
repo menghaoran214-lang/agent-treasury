@@ -1,6 +1,6 @@
 # Project Status
 
-## Current Stage: Gate 4.5 — Real Payment Proof & Demo Hardening ✅ COMPLETE
+## Current Stage: Gate 5 — Champion Judge Demo ✅ COMPLETE
 
 ### Gate Status
 | Gate | 内容 | 状态 |
@@ -10,60 +10,65 @@
 | 3 | Treasury Skill | ✅ Done |
 | 4 | Binance x402 / Agentic Wallet | ✅ Done |
 | 4.5 | Real Payment Proof & Demo Hardening | ✅ Done |
-| 5 | Champion Judge Demo | 🔜 Next |
+| 5 | Champion Judge Demo (Autonomous Fallback) | ✅ Done |
 
-## Gate 4.5 Summary
+## Gate 5 Summary
 
-**Payment State Machine**: `UNPROCESSED → PROCESSING → COMPLETED | FAILED | UNKNOWN`
+**Autonomous Fallback Demo**:
+- Stage 1: `runTreasury([alpha, signalx, datapro, premium])` → Premium ($6.00) BLOCKED (single_transaction_limit=1.00)
+- Stage 2: `runTreasury([signalx, datapro, alpha])` → SignalX ($0.80) selected → AUTO → COMPLETED
+- Ledger: $0.80, Receipt: COMPLETED, Resource: Unlocked
 
-**Persistent Idempotency**: `payment_records` SQLite table — survives process restart.
-- COMPLETED: returns `idempotent_reuse=true`, no re-charge
-- PROCESSING: returns `UNKNOWN`, no re-execute
-- UNKNOWN: requires manual inspection — no auto retry
-- FAILED: safe to retry after human review
+**5 Root Causes Fixed**:
+1. Stale tsx V8 cache → fixed by fresh server per test
+2. `max_budget: 3.00` vs `single_transaction_limit: 1.00` mismatch → aligned to 1.00
+3. `policyEngine` using `request.max_budget` instead of `selectedOffer.price` → uses actual price
+4. `securityGate` unknown `vendor-signalx` → added GATE5_VENDORS to `known_ids`
+5. `treasury.ts` `MODERATE_OVERPRICE` unconditionally overrode `auto_approved=true` → removed from chain
 
-**Security Hardening**:
-- CLI injection: `exec()` → `execFile()` with arg array
-- Recipient: vendor address registry, agent cannot override
-- Amount: validated before payment
-- Asset: BSC mainnet only (56/97), USDC only
-- UNKNOWN state on network errors — prevents double-charge
-
-**Demo Mode**: `TREASURY_PAYMENT_MODE=mock` — full Treasury flow, deterministic, no real money.
-
-**Real Binance E2E**: PENDING — requires user approval + BAW wallet auth.
-
-## Frozen Values
+## Frozen Gate 5 Demo Values
 
 | Item | Value |
 |------|-------|
-| DEFAULT_POLICY auto_pay_limit | 0.5 USDC |
-| Economy range | $0.08–$0.15 |
-| Balanced range | $0.18–$0.35 |
-| Performance range | $0.28–$0.60 |
-| Provider A (DataCheap) | $0.09, quality=65 |
-| Provider B (MarketInsight Pro) | $0.20, quality=91 |
-| Provider C (UltraFeed) | $0.32, quality=98 |
-| Receipt DTO | Frozen |
-| PaymentState enum | Frozen |
+| demoPolicy auto_pay_limit | 1.00 USDC |
+| demoPolicy single_transaction_limit | 1.00 USDC |
+| demoPolicy strategy | PERFORMANCE |
+| Purchase Request max_budget | 1.00 USDC |
+| vendor-premium | $6.00, quality 99 → BLOCKED |
+| vendor-signalx | $0.80, quality 94 → AUTO COMPLETED |
+| vendor-datapro | $1.20, quality 88 |
+| vendor-alpha | $0.30, quality 72 |
+
+## Test Fixtures (Isolated)
+
+| Fixture | Purpose | Location |
+|---------|---------|----------|
+| GATE5_VENDORS | Production Gate 5 demo + MCP production | `src/providers/mockProviders.ts` |
+| STRATEGY_PROVIDERS | Unit test strategy calibration | `tests/fixtures/strategyProviders.ts` |
+| INTEGRATION_VENDORS | Strategy integration tests | `tests/fixtures/integrationVendors.ts` |
+| MCP_TEST_VENDORS | MCP E2E test fixtures | `tests/fixtures/mcpTestVendors.ts` |
+
+**Test Mode**: `TREASURY_TEST_MODE=1` — only for E2E tests, production always off.
+
+## Test Commands
+
+```bash
+npm run typecheck      # TypeScript exit 0
+npm run test           # Unit 16/16
+npm run test:integration  # Strategy integration 3/3
+npm run test:mcp       # MCP E2E 11/11
+npm run test:gate5     # Gate 5 demo 13/13
+npm run test:all       # All of the above in sequence
+```
 
 ## Technology
 
-TypeScript 5.5.4, Node.js 22, ES2022 modules (ESM), `@modelcontextprotocol/sdk` 1.30.0, `better-sqlite3`, tsx, Jest 29.4.12/ts-jest. `moduleResolution: bundler`.
+TypeScript 5.5.4, Node.js 22, ES2022 modules (ESM), `@modelcontextprotocol/sdk` 1.30.0, `better-sqlite3`, tsx, Jest 30.5.1/ts-jest. `moduleResolution: bundler`.
 
 ## Known Technical Debt
 
 1. `@ts-ignore` in `sqliteStorage.ts` — `@types/better-sqlite3` uses `export =` (CJS) + `moduleResolution: bundler` → known limitation, runtime verified
 2. Jest `--forceExit` — ts-jest ESM + better-sqlite3 not explicitly closed
-3. `import.meta` typecheck in `skill-verification.ts` — tsconfig `module: ES2022` issue, runs fine with tsx
-4. `mockPaymentProvider` is stateless for idempotency — only `binancePaymentProvider` enforces persistent idempotency
-
-## Environment Variables
-
-```
-TREASURY_DB_PATH=./data/treasury.db
-TREASURY_PAYMENT_MODE=mock|binance
-BAW_CLI_PATH=baw
-TREASURY_WALLET_CHAIN_ID=56
-TREASURY_PAYMENT_TOKEN=0x55d398326f99059fF775485246999027B3197955
-```
+3. `@types/node` TS2416 errors in node_modules with `skipLibCheck: true` — Node 22 / TS 5.5.4 compatibility, only affects dev tooling, not runtime
+4. `TREASURY_TEST_MODE` is a bootstrap flag in `src/mcp/server.ts` — acceptable for hackathon; proper DI refactor deferred to post-hackathon
+5. `src/` imports test fixtures inline (MCP server test-mode vendors) — acceptable as test-only shortcut; proper resolver pattern deferred to post-hackathon

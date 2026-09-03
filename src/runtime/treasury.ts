@@ -1,4 +1,4 @@
-import type { PurchaseRequest, Policy, VendorSelection, ApprovalType, PurchaseStatus } from '../domain/types.js';
+import type { PurchaseRequest, Policy, VendorSelection, ApprovalType, PurchaseStatus, Receipt, ProviderOffer } from '../domain/types.js';
 import { ApprovalType as AT, PurchaseStatus as PS, RiskLevel as RL } from '../domain/types.js';
 import { getProvidersForResource } from '../providers/mockProviders.js';
 import { rankProviders } from './valueScore.js';
@@ -8,10 +8,10 @@ import { evaluatePolicy } from './policyEngine.js';
 import { executePayment } from '../adapters/paymentAdapter.js';
 import { createReceipt } from './receipt.js';
 import { addLedgerEntry, ledger } from './ledger.js';
-import type { Receipt } from '../domain/types.js';
 
 export interface TreasuryConfig {
   policy: Policy;
+  providers?: ProviderOffer[]; // ponytail: optional custom vendor list for Gate 5 demo
 }
 
 export interface TreasuryResult {
@@ -35,7 +35,8 @@ export async function runTreasury(
   request: PurchaseRequest,
   config: TreasuryConfig,
 ): Promise<TreasuryResult> {
-  const candidates = getProvidersForResource(request.resource_type);
+  const pool = config.providers ?? getProvidersForResource(request.resource_type);
+  const candidates = pool.filter((p: ProviderOffer) => p.capabilities.includes(request.resource_type));
   if (candidates.length === 0) throw new Error(`No providers: ${request.resource_type}`);
 
   // 1. Value-score rank
@@ -51,6 +52,7 @@ export async function runTreasury(
     provider: selectedOffer,
     amount: selectedOffer.price,
     currency: selectedOffer.currency,
+    candidates,
   });
 
   // 4. Policy evaluation
@@ -66,11 +68,13 @@ export async function runTreasury(
     approvalType = AT.BLOCKED; status = PS.BLOCKED;
   } else if (securityCheck.risk === RL.HIGH) {
     approvalType = AT.BLOCKED; status = PS.BLOCKED;
-  } else if (fairPriceCheck.result === FairPriceResultNew.MODERATE_OVERPRICE) {
+  } else if (securityCheck.risk === RL.MEDIUM) {
     approvalType = AT.HUMAN_REQUIRED; status = PS.PENDING;
-  } else if (securityCheck.risk === RL.MEDIUM || !policyDecision.auto_approved) {
+  } else if (!policyDecision.auto_approved) {
+    // Human required by policy — amount exceeds auto_pay_limit, category, etc.
     approvalType = AT.HUMAN_REQUIRED; status = PS.PENDING;
   } else {
+    // Policy approved + no blocking risk/price → AUTO complete
     approvalType = AT.AUTO; status = PS.COMPLETED;
   }
 

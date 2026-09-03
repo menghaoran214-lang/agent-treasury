@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Treasury — Judge Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --surface: #12141c;
+      --surface2: #1a1d28;
+      --border: #252836;
+      --accent: #5b6ef5;
+      --accent2: #7c8ff5;
+      --green: #34d399;
+      --green-bg: rgba(52, 211, 153, 0.08);
+      --red: #f87171;
+      --red-bg: rgba(248, 113, 113, 0.08);
+      --yellow: #fbbf24;
+      --yellow-bg: rgba(251, 191, 36, 0.08);
+      --text: #e2e4ef;
+      --muted: #6b7084;
+      --font: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Hero ──────────────────────────────────────────────────────────── */
+    .hero { text-align: center; padding: 56px 0 40px; }
+    .hero-logo { font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; }
+    .hero h1 { font-size: clamp(28px, 4vw, 48px); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 16px; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { font-size: 16px; color: var(--muted); max-width: 560px; margin: 0 auto 36px; line-height: 1.6; }
+    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+    .btn-danger:hover { background: var(--red-bg); }
+
+    /* ── Phase indicator ─────────────────────────────────────────────────── */
+    .phase-bar { display: flex; gap: 4px; margin: 32px 0; background: var(--surface); border-radius: 10px; padding: 6px; }
+    .phase-step { flex: 1; text-align: center; padding: 8px 4px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--muted); transition: all 0.25s; }
+    .phase-step.active { background: var(--accent); color: #fff; }
+    .phase-step.done { background: var(--green-bg); color: var(--green); }
+    .phase-step.blocked { background: var(--red-bg); color: var(--red); }
+
+    /* ── Grid ────────────────────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* ── Cards ──────────────────────────────────────────────────────────── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .card-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+    .badge-green { background: var(--green-bg); color: var(--green); }
+    .badge-red { background: var(--red-bg); color: var(--red); }
+    .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+    .badge-blue { background: rgba(91,110,245,0.12); color: var(--accent2); }
+
+    /* ── Vendor cards ───────────────────────────────────────────────────── */
+    .vendor-card { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 16px; transition: all 0.2s; }
+    .vendor-card.selected { border-color: var(--accent); background: rgba(91,110,245,0.06); }
+    .vendor-card.rejected { border-color: var(--border); opacity: 0.5; }
+    .vendor-card.blocked-vendor { border-color: var(--red); background: var(--red-bg); }
+    .vendor-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .vendor-resource { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .vendor-stats { display: flex; gap: 12px; }
+    .vendor-stat { text-align: center; }
+    .vendor-stat-val { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+    .vendor-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .vendor-reason { margin-top: 10px; font-size: 12px; color: var(--green); font-weight: 500; }
+    .vendor-blocked-reason { margin-top: 10px; font-size: 12px; color: var(--red); font-weight: 500; }
+
+    /* ── Policy card ────────────────────────────────────────────────────── */
+    .policy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .policy-item { background: var(--surface2); border-radius: 8px; padding: 12px; }
+    .policy-item-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .policy-item-value { font-size: 16px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+    .policy-decision { margin-top: 16px; text-align: center; padding: 14px; border-radius: 10px; font-size: 18px; font-weight: 800; letter-spacing: 0.05em; }
+    .policy-approved { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+    .policy-blocked { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+
+    /* ── Audit log ──────────────────────────────────────────────────────── */
+    .audit-log { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; }
+    .audit-entry { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+    .audit-entry:last-child { border-bottom: none; }
+    .audit-time { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 42px; }
+    .audit-msg { color: var(--text); flex: 1; line-height: 1.4; }
+    .audit-phase { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+    .ph-planning { background: rgba(91,110,245,0.15); color: var(--accent2); }
+    .ph-procurement { background: rgba(251,191,36,0.1); color: var(--yellow); }
+    .ph-policy { background: rgba(248,113,113,0.1); color: var(--red); }
+    .ph-payment { background: rgba(52,211,153,0.1); color: var(--green); }
+    .ph-resource { background: rgba(52,211,153,0.1); color: var(--green); }
+    .ph-execution { background: rgba(91,110,245,0.15); color: var(--accent2); }
+    .ph-completed { background: rgba(52,211,153,0.15); color: var(--green); }
+    .ph-error { background: rgba(248,113,113,0.1); color: var(--red); }
+
+    /* ── Receipt card ────────────────────────────────────────────────────── */
+    .receipt { background: var(--surface2); border: 1px solid rgba(52,211,153,0.3); border-radius: 12px; padding: 20px; }
+    .receipt-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 16px; }
+    .receipt-title { font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); margin-bottom: 4px; }
+    .receipt-id { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .receipt-rows { display: flex; flex-direction: column; gap: 8px; }
+    .receipt-row { display: flex; justify-content: space-between; align-items: center; }
+    .receipt-row-label { font-size: 12px; color: var(--muted); }
+    .receipt-row-value { font-size: 14px; font-weight: 600; font-family: var(--mono); }
+    .receipt-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .receipt-total-label { font-size: 13px; font-weight: 700; }
+    .receipt-total-value { font-size: 22px; font-weight: 800; color: var(--green); font-family: var(--mono); }
+    .receipt-status { text-align: center; margin-top: 14px; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 700; background: var(--green-bg); color: var(--green); }
+
+    /* ── Ledger ──────────────────────────────────────────────────────────── */
+    .ledger-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .ledger-row:last-child { border-bottom: none; }
+    .ledger-row-label { color: var(--muted); }
+    .ledger-row-value { font-weight: 600; font-family: var(--mono); }
+    .ledger-row-value.green { color: var(--green); }
+    .ledger-row-value.muted { color: var(--muted); }
+
+    /* ── Payment status ────────────────────────────────────────────────── */
+    .payment-demo { border: 1px solid rgba(52,211,153,0.3); background: var(--green-bg); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+    .payment-demo-icon { font-size: 22px; }
+    .payment-demo-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .payment-demo-value { font-size: 14px; font-weight: 700; color: var(--green); }
+    .payment-demo-ref { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+    /* ── Integration evidence ────────────────────────────────────────────── */
+    .evidence-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .evidence-item { background: var(--surface2); border-radius: 8px; padding: 12px; text-align: center; }
+    .evidence-item-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .evidence-item-value { font-size: 14px; font-weight: 700; color: var(--text); }
+    .evidence-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 700; }
+    .evidence-ready { background: var(--green-bg); color: var(--green); }
+    .evidence-pending { background: var(--yellow-bg); color: var(--yellow); }
+
+    /* ── Demo payment section ────────────────────────────────────────────── */
+    .demo-payment { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+    .demo-payment-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .demo-payment-icon { font-size: 32px; margin-bottom: 10px; }
+    .demo-payment-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .demo-payment-sub { font-size: 13px; color: var(--muted); }
+
+    /* ── Spinner ────────────────────────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+    /* ── Section titles ─────────────────────────────────────────────────── */
+    .section { margin-bottom: 32px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Error state ────────────────────────────────────────────────────── */
+    .error-state { background: var(--red-bg); border: 1px solid rgba(248,113,113,0.3); border-radius: 12px; padding: 20px; text-align: center; color: var(--red); font-size: 14px; font-weight: 600; }
+
+    /* ── Divider ─────────────────────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-logo">⟡ Agent Treasury</div>
+    <h1>Give AI Agents a Budget,<br><span>Not Your Wallet.</span></h1>
+    <p>The treasury and procurement infrastructure for autonomous agents. Agents spend safely — within policy, with full audit trails.</p>
+    <div class="cta-row">
+      <button class="btn btn-primary" id="btn-run" onclick="startDemo()">
+        <span id="btn-run-content">▶ Run Judge Demo</span>
+      </button>
+      <button class="btn btn-danger" id="btn-reset" onclick="resetDemo()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- Phase bar -->
+  <div class="phase-bar" id="phase-bar">
+    <div class="phase-step" id="ph-planning">Planning</div>
+    <div class="phase-step" id="ph-procurement">Procurement</div>
+    <div class="phase-step" id="ph-policy">Policy</div>
+    <div class="phase-step" id="ph-payment">Payment</div>
+    <div class="phase-step" id="ph-resource">Resource</div>
+    <div class="phase-step" id="ph-completed">Completed</div>
+  </div>
+
+  <!-- Error state -->
+  <div class="error-state" id="error-state" style="display:none">
+    Demo execution failed — reset and retry.
+  </div>
+
+  <!-- Main grid -->
+  <div id="demo-content">
+
+    <!-- Section 1: Vendor Comparison -->
+    <div class="section" id="section-vendors">
+      <div class="section-title">Vendor Comparison</div>
+      <div class="grid-3" id="vendor-list">
+        <div class="vendor-card" id="vc-alpha">
+          <div class="vendor-name">AlphaData</div>
+          <div class="vendor-resource">Sentiment API</div>
+          <div class="vendor-stats">
+            <div class="vendor-stat"><div class="vendor-stat-val">$0.30</div><div class="vendor-stat-lbl">Price</div></div>
+            <div class="vendor-stat"><div class="vendor-stat-val">72</div><div class="vendor-stat-lbl">Quality</div></div>
+          </div>
+        </div>
+        <div class="vendor-card" id="vc-signalx">
+          <div class="vendor-name">SignalX</div>
+          <div class="vendor-resource">Premium Sentiment</div>
+          <div class="vendor-stats">
+            <div class="vendor-stat"><div class="vendor-stat-val">$0.80</div><div class="vendor-stat-lbl">Price</div></div>
+            <div class="vendor-stat"><div class="vendor-stat-val">94</div><div class="vendor-stat-lbl">Quality</div></div>
+          </div>
+        </div>
+        <div class="vendor-card" id="vc-datapro">
+          <div class="vendor-name">DataPro</div>
+          <div class="vendor-resource">Institutional Feed</div>
+          <div class="vendor-stats">
+            <div class="vendor-stat"><div class="vendor-stat-val">$1.20</div><div class="vendor-stat-lbl">Price</div></div>
+            <div class="vendor-stat"><div class="vendor-stat-val">88</div><div class="vendor-stat-lbl">Quality</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Expensive vendor -->
+      <div style="margin-top:12px">
+        <div class="vendor-card blocked-vendor" id="vc-premium">
+          <div class="vendor-name">Institutional Premium Package</div>
+          <div class="vendor-resource">Full Institutional Sentiment + Risk Data</div>
+          <div class="vendor-stats">
+            <div class="vendor-stat"><div class="vendor-stat-val">$6.00</div><div class="vendor-stat-lbl">Price</div></div>
+            <div class="vendor-stat"><div class="vendor-stat-val">99</div><div class="vendor-stat-lbl">Quality</div></div>
+          </div>
+          <div class="vendor-blocked-reason" id="premium-blocked-reason">Evaluating...</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Section 2: Policy Engine -->
+    <div class="section">
+      <div class="section-title">Policy Engine</div>
+      <div class="card">
+        <div class="policy-grid">
+          <div class="policy-item">
+            <div class="policy-item-label">Budget</div>
+            <div class="policy-item-value">3.00 USDC</div>
+          </div>
+          <div class="policy-item">
+            <div class="policy-item-label">Per-Transaction Limit</div>
+            <div class="policy-item-value">1.00 USDC</div>
+          </div>
+          <div class="policy-item">
+            <div class="policy-item-label">Strategy</div>
+            <div class="policy-item-value">Performance</div>
+          </div>
+          <div class="policy-item">
+            <div class="policy-item-label">Asset</div>
+            <div class="policy-item-value">USDC</div>
+          </div>
+        </div>
+        <div id="policy-decision-area" style="margin-top:16px">
+          <div class="policy-decision" id="policy-decision" style="background:var(--surface2);color:var(--muted)">
+            Awaiting vendor selection...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Section 3: Demo Payment -->
+    <div class="section">
+      <div class="section-title">Payment</div>
+      <div class="demo-payment" id="payment-section">
+        <div class="demo-payment-icon">💳</div>
+        <div class="demo-payment-title">Demo Payment</div>
+        <div class="demo-payment-sub">Treasury Demo Provider — mock payment for Judge Demo</div>
+      </div>
+      <div class="payment-demo" id="payment-result" style="display:none;margin-top:12px">
+        <div class="payment-demo-icon">✅</div>
+        <div>
+          <div class="payment-demo-label">Status</div>
+          <div class="payment-demo-value" id="payment-status">COMPLETED</div>
+          <div class="payment-demo-ref" id="payment-ref"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Section 4: Audit Trail -->
+    <div class="section">
+      <div class="section-title">Agent Audit Trail</div>
+      <div class="card">
+        <div class="audit-log" id="audit-log">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:24px">
+            Click "Run Judge Demo" to start
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Section 5: Receipt + Ledger -->
+    <div class="section">
+      <div class="section-title">Receipt &amp; Ledger</div>
+      <div class="grid-2">
+        <div class="receipt" id="receipt-card" style="display:none">
+          <div class="receipt-header">
+            <div class="receipt-title">Agent Purchase Receipt</div>
+            <div class="receipt-id" id="receipt-id"></div>
+          </div>
+          <div class="receipt-rows">
+            <div class="receipt-row"><span class="receipt-row-label">Task</span><span class="receipt-row-value" id="r-task">—</span></div>
+            <div class="receipt-row"><span class="receipt-row-label">Initial Budget</span><span class="receipt-row-value" id="r-budget">—</span></div>
+            <div class="receipt-row"><span class="receipt-row-label">Purchased</span><span class="receipt-row-value" id="r-vendor">—</span></div>
+            <div class="receipt-row"><span class="receipt-row-label">Cost</span><span class="receipt-row-value" id="r-cost">—</span></div>
+            <div class="receipt-row"><span class="receipt-row-label">Reason</span><span class="receipt-row-value" id="r-reason">—</span></div>
+            <div class="receipt-row"><span class="receipt-row-label">Policy</span><span class="receipt-row-value" id="r-policy">—</span></div>
+            <div class="receipt-row"><span class="receipt-row-label">Payment</span><span class="receipt-row-value" id="r-payment">—</span></div>
+          </div>
+          <div class="receipt-total">
+            <span class="receipt-total-label">Remaining Budget</span>
+            <span class="receipt-total-value" id="r-remaining">—</span>
+          </div>
+          <div class="receipt-status" id="r-status">—</div>
+        </div>
+
+        <div class="card" id="ledger-card" style="display:none">
+          <div class="card-header"><div class="card-title">Treasury Ledger</div></div>
+          <div id="ledger-rows">
+            <div class="ledger-row"><span class="ledger-row-label">Initial</span><span class="ledger-row-value green" id="l-initial">—</span></div>
+            <div class="ledger-row"><span class="ledger-row-label">Spend</span><span class="ledger-row-value" id="l-spend">—</span></div>
+            <div class="ledger-row"><span class="ledger-row-label">Remaining</span><span class="ledger-row-value green" id="l-remaining">—</span></div>
+            <div class="ledger-row"><span class="ledger-row-label">Vendor</span><span class="ledger-row-value" id="l-vendor">—</span></div>
+            <div class="ledger-row"><span class="ledger-row-label">Policy</span><span class="ledger-row-value" id="l-policy">—</span></div>
+            <div class="ledger-row"><span class="ledger-row-label">Reference</span><span class="ledger-row-value muted" id="l-ref">—</span></div>
+            <div class="ledger-row"><span class="ledger-row-label">Timestamp</span><span class="ledger-row-value muted" id="l-time">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Section 6: Binance Integration Evidence -->
+    <div class="section">
+      <div class="section-title">Binance Integration Evidence</div>
+      <div class="card">
+        <div class="evidence-grid">
+          <div class="evidence-item">
+            <div class="evidence-item-label">Provider</div>
+            <div class="evidence-item-value" style="font-size:12px">Binance Agentic Wallet</div>
+          </div>
+          <div class="evidence-item">
+            <div class="evidence-item-label">Network</div>
+            <div class="evidence-item-value">BSC Mainnet</div>
+          </div>
+          <div class="evidence-item">
+            <div class="evidence-item-label">Asset</div>
+            <div class="evidence-item-value">USDC</div>
+          </div>
+          <div class="evidence-item">
+            <div class="evidence-item-label">Contract</div>
+            <div class="evidence-item-value" style="font-size:10px;font-family:var(--mono)">0x8AC76...Cd580d</div>
+          </div>
+          <div class="evidence-item">
+            <div class="evidence-item-label">Payment Mode</div>
+            <div class="evidence-item-value" id="ev-payment-mode">mock</div>
+          </div>
+          <div class="evidence-item" style="grid-column:1/-1">
+            <div class="evidence-status evidence-pending" id="ev-status">
+              <span>⚠</span> NOT_CONFIGURED — Real payment verification pending
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /demo-content -->
+</div><!-- /container -->
+
+<script>
+  const API = '';
+  let currentRunId = null;
+  let pollTimer = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function addAuditEntry(entry) {
+    const log = $('audit-log');
+    // Remove placeholder if present
+    if (log.querySelector('div[style]')) log.innerHTML = '';
+
+    const phases = {
+      planning: 'ph-planning',
+      procurement: 'ph-procurement',
+      policy: 'ph-policy',
+      payment: 'ph-payment',
+      resource: 'ph-resource',
+      execution: 'ph-execution',
+      completed: 'ph-completed',
+      error: 'ph-error',
+    };
+    const cls = phases[entry.phase] || 'ph-planning';
+    const t = String(entry.elapsed_ms).padStart(4, ' ') + 'ms';
+    const div = document.createElement('div');
+    div.className = 'audit-entry';
+    div.innerHTML = `<span class="audit-time">${t}</span><span class="audit-phase ${cls}">${entry.phase}</span><span class="audit-msg">${entry.message}</span>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+
+    // Update phase bar
+    const phaseMap = {
+      planning: 'ph-planning',
+      procurement: 'ph-procurement',
+      policy: 'ph-policy',
+      payment: 'ph-payment',
+      resource: 'ph-resource',
+      execution: 'ph-execution',
+      completed: 'ph-completed',
+    };
+    const phaseId = phaseMap[entry.phase];
+    if (phaseId) {
+      const step = $(phaseId);
+      if (step && !step.classList.contains('done')) {
+        // Mark previous steps done
+        document.querySelectorAll('.phase-step.done, .phase-step.active').forEach(s => {
+          if (s !== step) s.classList.remove('active');
+        });
+        step.classList.add('active');
+      }
+    }
+
+    // Special: policy blocked
+    if (entry.message.includes('BLOCKED')) {
+      $('premium-blocked-reason').textContent = '❌ BLOCKED — Exceeds per-transaction limit';
+      $('vc-premium').classList.add('blocked-vendor');
+      const pd = $('policy-decision');
+      pd.className = 'policy-decision policy-blocked';
+      pd.textContent = '❌ BLOCKED — Exceeds 1.00 USDC limit';
+    }
+    if (entry.message.includes('SignalX selected')) {
+      $('vc-signalx').classList.add('selected');
+      $('vc-signalx').querySelector('.vendor-stats').insertAdjacentHTML('beforeend',
+        '<div class="vendor-reason" id="sel-reason">Best quality-to-cost ratio</div>');
+    }
+    if (entry.message.includes('APPROVED') || entry.message.includes('Payment COMPLETED')) {
+      const pd = $('policy-decision');
+      if (!pd.classList.contains('policy-blocked')) {
+        pd.className = 'policy-decision policy-approved';
+        pd.textContent = '✅ APPROVED';
+      }
+    }
+    if (entry.message.includes('Payment COMPLETED')) {
+      $('payment-section').style.display = 'none';
+      const pr = $('payment-result');
+      pr.style.display = 'flex';
+      const ref = entry.message.match(/mock-tx-[\d]+/)?.[0] || 'mock-tx-xxx';
+      $('payment-status').textContent = 'COMPLETED';
+      $('payment-ref').textContent = ref;
+    }
+  }
+
+  function showReceipt(result) {
+    if (!result) return;
+    const r = result.receipt;
+    $('receipt-card').style.display = 'block';
+    $('receipt-id').textContent = r.id;
+    $('r-task').textContent = 'ETH 24h Risk Analysis';
+    $('r-budget').textContent = '3.00 USDC';
+    $('r-vendor').textContent = r.vendor_name || 'SignalX';
+    $('r-cost').textContent = r.amount + ' USDC';
+    $('r-reason').textContent = 'Best quality-to-cost ratio';
+    $('r-policy').textContent = r.approval_type?.toUpperCase() || 'AUTO';
+    $('r-payment').textContent = r.payment_method?.toUpperCase() || 'MOCK';
+    $('r-remaining').textContent = (3.0 - (r.amount || 0)).toFixed(2) + ' USDC';
+    const statusEl = $('r-status');
+    statusEl.textContent = r.status === 'completed' ? '✓ TASK COMPLETED' : r.status.toUpperCase();
+    statusEl.style.background = r.status === 'completed' ? 'var(--green-bg)' : 'var(--yellow-bg)';
+    statusEl.style.color = r.status === 'completed' ? 'var(--green)' : 'var(--yellow)';
+
+    // Ledger
+    const ls = result.ledger_stats;
+    $('ledger-card').style.display = 'block';
+    $('l-initial').textContent = '3.00 USDC';
+    $('l-spend').textContent = (r.amount || 0) + ' USDC';
+    $('l-remaining').textContent = (3.0 - (r.amount || 0)).toFixed(2) + ' USDC';
+    $('l-vendor').textContent = r.vendor_name || '—';
+    $('l-policy').textContent = r.approval_type?.toUpperCase() || 'AUTO';
+    $('l-ref').textContent = r.transaction_reference || '—';
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    $('l-time').textContent = now;
+  }
+
+  function markPhaseDone(phase) {
+    const map = {
+      planning: 'ph-planning',
+      procurement: 'ph-procurement',
+      policy: 'ph-policy',
+      payment: 'ph-payment',
+      resource: 'ph-resource',
+    };
+    const id = map[phase];
+    if (!id) return;
+    const step = $(id);
+    if (step) { step.classList.remove('active'); step.classList.add('done'); }
+  }
+
+  async function startDemo() {
+    if (currentRunId) return;
+    const btn = $('btn-run');
+    btn.disabled = true;
+    $('btn-run-content').innerHTML = '<span class="spinner"></span> Running...';
+
+    // Reset UI
+    $('error-state').style.display = 'none';
+    $('audit-log').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Running...</div>';
+    $('receipt-card').style.display = 'none';
+    $('ledger-card').style.display = 'none';
+    $('payment-result').style.display = 'none';
+    $('payment-section').style.display = 'block';
+    $('vc-premium').classList.remove('blocked-vendor');
+    $('vc-signalx').classList.remove('selected');
+    $('premium-blocked-reason').textContent = 'Evaluating...';
+    const selReason = document.getElementById('sel-reason');
+    if (selReason) selReason.remove();
+    document.querySelectorAll('.phase-step').forEach(s => { s.classList.remove('done', 'active'); });
+    const pd = $('policy-decision');
+    pd.className = 'policy-decision';
+    pd.textContent = 'Awaiting vendor selection...';
+    pd.style.background = 'var(--surface2)';
+    pd.style.color = 'var(--muted)';
+
+    try {
+      const res = await fetch('/api/demo/run', { method: 'POST' });
+      const data = await res.json();
+      currentRunId = data.run_id;
+      pollState();
+    } catch (e) {
+      showError();
+    }
+  }
+
+  async function pollState() {
+    if (!currentRunId) return;
+    try {
+      const res = await fetch(`/api/demo/state/${currentRunId}`);
+      const state = await res.json();
+
+      // Add new audit entries
+      state.auditLog.forEach(addAuditEntry);
+
+      if (state.phase === 'completed') {
+        markPhaseDone('resource');
+        $('ph-completed').classList.add('done');
+        if (state.treasuryResult) showReceipt(state.treasuryResult);
+        stopPolling();
+        $('btn-run-content').textContent = '✓ Demo Complete';
+        $('btn-run').disabled = false;
+        currentRunId = null;
+      } else if (state.phase === 'error') {
+        showError();
+        stopPolling();
+      } else {
+        pollTimer = setTimeout(pollState, 300);
+      }
+    } catch (e) {
+      showError();
+      stopPolling();
+    }
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  }
+
+  async function resetDemo() {
+    stopPolling();
+    currentRunId = null;
+    try { await fetch('/api/demo/reset', { method: 'POST' }); } catch {}
+    $('btn-run-content').textContent = '▶ Run Judge Demo';
+    $('btn-run').disabled = false;
+    $('error-state').style.display = 'none';
+    $('audit-log').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Click "Run Judge Demo" to start</div>';
+    $('receipt-card').style.display = 'none';
+    $('ledger-card').style.display = 'none';
+    $('payment-result').style.display = 'none';
+    $('payment-section').style.display = 'block';
+    $('vc-premium').classList.remove('blocked-vendor');
+    $('vc-signalx').classList.remove('selected');
+    $('premium-blocked-reason').textContent = 'Evaluating...';
+    const selReason = document.getElementById('sel-reason');
+    if (selReason) selReason.remove();
+    document.querySelectorAll('.phase-step').forEach(s => { s.classList.remove('done', 'active'); });
+    const pd = $('policy-decision');
+    pd.className = 'policy-decision';
+    pd.textContent = 'Awaiting vendor selection...';
+    pd.style.background = 'var(--surface2)';
+    pd.style.color = 'var(--muted)';
+  }
+
+  function showError() {
+    $('error-state').style.display = 'block';
+    $('btn-run-content').textContent = '▶ Run Judge Demo';
+    $('btn-run').disabled = false;
+    currentRunId = null;
+  }
+
+  // Load integration evidence
+  fetch('/api/evidence')
+    .then(r => r.json())
+    .then(d => {
+      $('ev-payment-mode').textContent = d.payment_mode || 'mock';
+      if (d.status === 'NOT_CONFIGURED') {
+        $('ev-status').className = 'evidence-status evidence-pending';
+        $('ev-status').innerHTML = '<span>⚠</span> NOT_CONFIGURED — Real payment verification pending';
+      }
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

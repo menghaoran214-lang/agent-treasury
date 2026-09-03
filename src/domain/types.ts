@@ -9,6 +9,7 @@ export const ResourceType = {
   MCP: 'mcp',
   SAAS: 'saas',
   OTHER: 'other',
+  SENTIMENT_DATA: 'sentiment_data',
   SUSPICIOUS_DATA: 'suspicious_data',
 } as const;
 export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];

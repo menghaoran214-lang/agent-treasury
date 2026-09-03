@@ -91,7 +91,6 @@ const storage = {
 };
 
 // Import treasury modules
-import { getProvidersForResource } from '../src/providers/mockProviders.js';
 import { rankProviders } from '../src/runtime/valueScore.js';
 import { checkFairPrice, FairPriceResultNew } from '../src/runtime/fairPrice.js';
 import { runSecurityGate } from '../src/runtime/securityGate.js';
@@ -100,6 +99,7 @@ import { executePayment } from '../src/adapters/paymentAdapter.js';
 import { createReceipt } from '../src/runtime/receipt.js';
 import { PurchaseStrategy, ApprovalType, PurchaseStatus, RiskLevel } from '../src/domain/types.js';
 import type { PurchaseRequest, Policy } from '../src/domain/types.js';
+import { INTEGRATION_VENDORS } from './fixtures/integrationVendors.js';
 
 async function runTreasuryInline(strategy: string) {
   const req: PurchaseRequest = {
@@ -150,14 +150,14 @@ async function runTreasuryInline(strategy: string) {
   console.log(`[STAGE1] Purchase saved: ${req.id}`);
 
   // Stage 2: run treasury
-  const candidates = getProvidersForResource(req.resource_type);
+  const candidates = INTEGRATION_VENDORS.filter(p => p.capabilities.includes(req.resource_type));
   const ranked = rankProviders(candidates, policy.strategy);
   const selected = candidates.find(p => p.provider_id === ranked[0].provider_id)!;
   const score = ranked[0];
 
   const fairPriceCheck = checkFairPrice(selected, candidates, policy.strategy);
-  const securityCheck = runSecurityGate({ provider: selected, amount: selected.price, currency: selected.currency });
-  const policyDecision = evaluatePolicy(req, policy, securityCheck.risk);
+  const securityCheck = runSecurityGate({ provider: selected, amount: selected.price, currency: selected.currency, candidates });
+  const policyDecision = evaluatePolicy(req, policy, securityCheck.risk, selected.price);
 
   let approvalType = ApprovalType.AUTO;
   let status = PurchaseStatus.PENDING;
@@ -168,9 +168,9 @@ async function runTreasuryInline(strategy: string) {
     approvalType = ApprovalType.BLOCKED; status = PurchaseStatus.BLOCKED;
   } else if (securityCheck.risk === RiskLevel.HIGH) {
     approvalType = ApprovalType.BLOCKED; status = PurchaseStatus.BLOCKED;
-  } else if (fairPriceCheck.result === FairPriceResultNew.MODERATE_OVERPRICE) {
+  } else if (securityCheck.risk === RiskLevel.MEDIUM) {
     approvalType = ApprovalType.HUMAN_REQUIRED; status = PurchaseStatus.PENDING;
-  } else if (securityCheck.risk === RiskLevel.MEDIUM || !policyDecision.auto_approved) {
+  } else if (!policyDecision.auto_approved) {
     approvalType = ApprovalType.HUMAN_REQUIRED; status = PurchaseStatus.PENDING;
   } else {
     approvalType = ApprovalType.AUTO; status = PurchaseStatus.COMPLETED;

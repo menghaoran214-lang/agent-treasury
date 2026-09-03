@@ -2,6 +2,7 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.4.0",
     "better-sqlite3": "^13.0.3",
@@ -20,8 +21,12 @@
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config jest.config.cjs --testTimeout=30000",
     "test:mcp": "npx tsx tests/mcp-e2e.ts",
     "test:integration": "npx tsx tests/integration-sqlite.ts",
+    "test:gate5": "npx tsx tests/gate5-tests.ts",
+    "test:all": "npm run typecheck && npm run test && npm run test:integration && npm run test:mcp && npm run test:gate5",
     "typecheck": "tsc --noEmit",
-    "demo": "npx tsx src/cli.ts"
+    "demo": "npx tsx src/cli.ts",
+    "demo:server": "TREASURY_DB_PATH=./data/treasury-demo.db npx tsx src/server/demoServer.ts",
+    "demo:ui": "open http://localhost:3333/judge-demo.html"
   },
   "keywords": [
     "ai-agent",

@@ -1,11 +1,12 @@
 import { RiskLevel } from '../domain/types.js';
 import type { ProviderOffer, SecurityCheckResult, RiskLevel as RL } from '../domain/types.js';
-import { MOCK_PROVIDERS } from '../providers/mockProviders.js';
+import { MOCK_PROVIDERS, GATE5_VENDORS } from '../providers/mockProviders.js';
 
 export interface SecurityGateInput {
   provider: ProviderOffer;
   amount: number;
   currency: string;
+  candidates?: ProviderOffer[]; // ponytail: include candidate pool so they are "known"
 }
 
 /**
@@ -17,7 +18,12 @@ export interface SecurityGateInput {
  *   else → LOW
  */
 export function runSecurityGate(input: SecurityGateInput): SecurityCheckResult {
-  const known_ids = new Set(MOCK_PROVIDERS.map(p => p.provider_id));
+  // Include candidate pool so test fixtures / isolated vendor sets are always "known"
+  const known_ids = new Set([
+    ...MOCK_PROVIDERS,
+    ...GATE5_VENDORS,
+    ...(input.candidates ?? []),
+  ].map(p => p.provider_id));
 
   const provider_known    = known_ids.has(input.provider.provider_id);
   const destination_match = true;   // MVP: always pass

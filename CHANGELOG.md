@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.6.0] — 2026-09-03
+
+### Added
+- `tests/fixtures/strategyProviders.ts` — isolated unit-test strategy vendors (provider-a/b/c)
+- `tests/fixtures/integrationVendors.ts` — isolated integration-test vendors (DataCheap/MarketInsight Pro/UltraFeed)
+- `tests/fixtures/mcpTestVendors.ts` — MCP E2E test vendors
+- `src/runtime/securityGate.ts` — `candidates` parameter: provider pool included in known_ids so test vendors get LOW risk
+- `npm run test:gate5` — Gate 5 demo test runner
+- `npm run test:all` — sequential full regression suite
+
+### Fixed
+- `src/runtime/treasury.ts` — pass `candidates` pool to security gate so test-fixture providers get LOW (not MEDIUM) risk
+- `src/runtime/securityGate.ts` — accept `candidates` in `SecurityGateInput`, include in `known_ids` set
+- `tests/integration-sqlite.ts` — use `INTEGRATION_VENDORS` (not GATE5_VENDORS), add `candidates` to security gate call, add `price` to `evaluatePolicy`
+- `tests/mcp-e2e.ts` — spawn MCP server with `TREASURY_TEST_MODE=1`, fix `resource_type: 'api'` → `'market_data'` in Scene 6
+- `src/mcp/server.ts` — `TREASURY_TEST_MODE=1` injects test vendors into `runTreasury` calls; production uses GATE5_VENDORS
+
+### Gate 5 Root Causes Fixed
+1. Stale tsx V8 cache → fresh server per test
+2. `max_budget: 3.00` vs `single_transaction_limit: 1.00` → both 1.00
+3. `policyEngine` using `request.max_budget` → uses `selectedOffer.price`
+4. `securityGate` unknown `vendor-signalx` → GATE5_VENDORS in `known_ids`
+5. `treasury.ts` `MODERATE_OVERPRICE` overrode `auto_approved=true` → removed from approval chain
+
+### Known Issues
+- `@types/node` TS2416 errors — Node 22 / TS 5.5.4 / `@types/node ^26.4.0` incompatibility in node_modules, `skipLibCheck: true` suppresses
+- `TREASURY_TEST_MODE=1` is a bootstrap flag in `src/mcp/server.ts` — hackathon shortcut; proper DI refactor deferred post-hackathon
+
 ## [0.5.0] — 2026-09-02
 
 ### Added

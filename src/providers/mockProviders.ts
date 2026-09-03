@@ -2,57 +2,75 @@ import { ResourceType } from '../domain/types.js';
 import type { ProviderOffer, ResourceType as RT } from '../domain/types.js';
 
 /**
- * Mock provider data — calibrated so natural scoring produces:
- *   Economy     → provider-a (DataCheap,  cheapest, acceptable quality)
- *   Balanced    → provider-b (MarketInsight Pro, best value-per-score)
- *   Performance → provider-c (UltraFeed,  fastest & highest quality)
+ * Mock provider data — Gate 5 Judge Demo ONLY.
  *
- * Price spread is critical for fair-price deviation checks:
- *   Median of (0.08, 0.20, 0.45) = 0.20 (provider-b = median)
- *   → provider-b deviation = 0% → PASS
- *   → provider-c deviation = 125% → severe anomaly → blocked if selected
- *   → provider-a deviation = 60% → severe anomaly → blocked if selected
+ * These replace the full Gate 2/3/4 provider set for demo purposes.
+ * The integration/e2e tests use different DB paths and do not share state.
  *
- * provider-x: NOT market_data capable — used only for Scene 4 BLOCKED demo.
+ * provider-x (suspicious_data): kept for trust-level BLOCKED test.
+ * Gate 5 vendors (market_data): AlphaData, SignalX, DataPro, Institutional Premium.
+ *
+ * Performance strategy: highest quality within budget wins.
+ * Demo policy: auto_pay_limit = 1.00 USDC.
+ *
+ * vendor prices: $0.30 / $0.40 / $0.50 (all under 1.00, all pass)
+ * expensive: $6.00 (blocked by auto_pay_limit)
+ *
+ * provider-c, provider-b, provider-a removed — their quality scores
+ * (98/91/65) would shadow the demo vendors in performance ranking.
  */
 export const MOCK_PROVIDERS: ProviderOffer[] = [
+  // Gate 5 demo vendors
   {
-    provider_id: 'provider-a',
-    provider_name: 'DataCheap',
-    price: 0.08,
+    provider_id: 'vendor-alpha',
+    provider_name: 'AlphaData',
+    price: 0.30,
     currency: 'USDC',
-    quality_score: 65,
-    latency_ms: 3500,
-    reliability: 0.82,
-    trust_level: 'low',
-    capabilities: ['market_data', 'api'] as RT[],
-    metadata: { region: 'us-east', uptime_sla: 95 },
-  },
-  {
-    provider_id: 'provider-b',
-    provider_name: 'MarketInsight Pro',
-    price: 0.20,
-    currency: 'USDC',
-    quality_score: 91,
-    latency_ms: 800,
-    reliability: 0.97,
+    quality_score: 72,
+    latency_ms: 1200,
+    reliability: 0.93,
     trust_level: 'low',
     capabilities: ['market_data'] as RT[],
-    metadata: { region: 'us-east', uptime_sla: 99.9 },
+    metadata: { region: 'us-east', uptime_sla: 96 },
   },
   {
-    provider_id: 'provider-c',
-    provider_name: 'UltraFeed',
-    price: 0.32,
+    provider_id: 'vendor-signalx',
+    provider_name: 'SignalX',
+    price: 0.80,
     currency: 'USDC',
-    quality_score: 98,
-    latency_ms: 120,
-    reliability: 0.99,
+    quality_score: 94,
+    latency_ms: 350,
+    reliability: 0.98,
     trust_level: 'low',
     capabilities: ['market_data'] as RT[],
-    metadata: { region: 'ap-east', uptime_sla: 99.99 },
+    metadata: { region: 'us-east', uptime_sla: 99.5 },
   },
-  // Scene 4: suspicious provider — trust_level=HIGH triggers BLOCKED
+  {
+    provider_id: 'vendor-datapro',
+    provider_name: 'DataPro',
+    price: 1.20,
+    currency: 'USDC',
+    quality_score: 88,
+    latency_ms: 600,
+    reliability: 0.96,
+    trust_level: 'low',
+    capabilities: ['market_data'] as RT[],
+    metadata: { region: 'eu-central', uptime_sla: 98 },
+  },
+  // Expensive vendor — $6.00, exceeds $1.00 auto_pay_limit → BLOCKED
+  {
+    provider_id: 'vendor-premium',
+    provider_name: 'Institutional Premium Package',
+    price: 6.00,
+    currency: 'USDC',
+    quality_score: 99,
+    latency_ms: 80,
+    reliability: 0.999,
+    trust_level: 'low',
+    capabilities: ['market_data'] as RT[],
+    metadata: { region: 'us-east', uptime_sla: 99.99 },
+  },
+  // kept for trust-level BLOCKED test (suspicious_data, not market_data)
   {
     provider_id: 'provider-x',
     provider_name: 'NoNameData',
@@ -62,23 +80,71 @@ export const MOCK_PROVIDERS: ProviderOffer[] = [
     latency_ms: 5000,
     reliability: 0.55,
     trust_level: 'high',  // known_risk_flag=true → HIGH risk → BLOCKED
-    capabilities: [ResourceType.SUSPICIOUS_DATA] as RT[],  // NOT market_data
+    capabilities: [ResourceType.SUSPICIOUS_DATA] as RT[],
     metadata: { region: 'unknown', uptime_sla: 80 },
-  },
-  // Overpriced provider for SEVERE_OVERPRICE test (Performance tier, way above $0.60 ceiling)
-  {
-    provider_id: 'provider-y',
-    provider_name: 'PremiumData Pro',
-    price: 1.50,
-    currency: 'USDC',
-    quality_score: 99,
-    latency_ms: 80,
-    reliability: 0.995,
-    trust_level: 'low',
-    capabilities: ['market_data'] as RT[],  // market_data — used for Scene 3 SEVERE_OVERPRICE test
   },
 ];
 
 export function getProvidersForResource(resourceType: RT): ProviderOffer[] {
   return MOCK_PROVIDERS.filter(p => p.capabilities.includes(resourceType));
+}
+
+// ─── Gate 5 Judge Demo Vendors ────────────────────────────────────────────────
+// Isolated so Gate 2/3/4 integration tests keep their provider-a/b/c.
+// Demo policy: auto_pay_limit = 1.00 USDC (so $6.00 blocked, $0.40 passes).
+
+export const GATE5_VENDORS: ProviderOffer[] = [
+  {
+    provider_id: 'vendor-alpha',
+    provider_name: 'AlphaData',
+    price: 0.30,
+    currency: 'USDC',
+    quality_score: 72,
+    latency_ms: 1200,
+    reliability: 0.93,
+    trust_level: 'low',
+    capabilities: ['market_data'] as RT[],
+    metadata: { region: 'us-east', uptime_sla: 96 },
+  },
+  {
+    provider_id: 'vendor-signalx',
+    provider_name: 'SignalX',
+    price: 0.80,
+    currency: 'USDC',
+    quality_score: 94,
+    latency_ms: 350,
+    reliability: 0.98,
+    trust_level: 'low',
+    capabilities: ['market_data'] as RT[],
+    metadata: { region: 'us-east', uptime_sla: 99.5 },
+  },
+  {
+    provider_id: 'vendor-datapro',
+    provider_name: 'DataPro',
+    price: 1.20,
+    currency: 'USDC',
+    quality_score: 88,
+    latency_ms: 600,
+    reliability: 0.96,
+    trust_level: 'low',
+    capabilities: ['market_data'] as RT[],
+    metadata: { region: 'eu-central', uptime_sla: 98 },
+  },
+  // $6.00 — exceeds $1.00 auto_pay_limit → BLOCKED by policy
+  {
+    provider_id: 'vendor-premium',
+    provider_name: 'Institutional Premium Package',
+    price: 6.00,
+    currency: 'USDC',
+    quality_score: 99,
+    latency_ms: 80,
+    reliability: 0.999,
+    trust_level: 'low',
+    capabilities: ['market_data'] as RT[],
+    metadata: { region: 'us-east', uptime_sla: 99.99 },
+  },
+];
+
+export function getGate5VendorsForResource(resourceType: RT): ProviderOffer[] {
+  return GATE5_VENDORS.filter(p => p.capabilities.includes(resourceType));
 }
