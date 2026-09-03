@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@playwright/test": "^1.62.1",
     "@types/better-sqlite3": "^9.6.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
@@ -24,11 +25,11 @@
     "test:gate5": "npx tsx tests/gate5-tests.ts",
     "test:all": "npm run typecheck && npm run test && npm run test:integration && npm run test:mcp && npm run test:gate5",
     "typecheck": "tsc --noEmit",
-    "demo": "npx tsx src/cli.ts",
+    "demo": "node scripts/run-demo.js",
     "demo:server": "TREASURY_DB_PATH=./data/treasury-demo.db npx tsx src/server/demoServer.ts",
     "demo:ui": "open http://localhost:5173",
     "ui:build": "cd apps/demo-ui && npm run build",
-    "demo": "node scripts/run-demo.js"
+    "screenshot": "cd apps/demo-ui && node screenshot-ui.js"
   },
   "keywords": [
     "ai-agent",
