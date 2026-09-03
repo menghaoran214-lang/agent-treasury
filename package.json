@@ -26,7 +26,9 @@
     "typecheck": "tsc --noEmit",
     "demo": "npx tsx src/cli.ts",
     "demo:server": "TREASURY_DB_PATH=./data/treasury-demo.db npx tsx src/server/demoServer.ts",
-    "demo:ui": "open http://localhost:3333/judge-demo.html"
+    "demo:ui": "open http://localhost:5173",
+    "ui:build": "cd apps/demo-ui && npm run build",
+    "demo": "node scripts/run-demo.js"
   },
   "keywords": [
     "ai-agent",

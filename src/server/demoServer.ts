@@ -209,6 +209,135 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// ─── Ledger ───────────────────────────────────────────────────────────────────
+
+app.get('/api/ledger', async (_req, res) => {
+  try {
+    const { ledger } = await import('../runtime/ledger.js') as { ledger: any };
+    const entries = ledger.all();
+    const stats = ledger.stats();
+    res.json({ entries, stats });
+  } catch {
+    res.status(500).json({ error: 'Failed to load ledger' });
+  }
+});
+
+// ─── Receipt ─────────────────────────────────────────────────────────────────
+
+app.get('/api/receipt/:receiptId', async (req, res) => {
+  try {
+    const { ledger } = await import('../runtime/ledger.js') as { ledger: any };
+    const receipt = ledger.getReceipt(req.params.receiptId);
+    if (!receipt) { res.status(404).json({ error: 'No such receipt' }); return; }
+    res.json(receipt);
+  } catch {
+    res.status(500).json({ error: 'Failed to load receipt' });
+  }
+});
+
+// ─── Policy ──────────────────────────────────────────────────────────────────
+
+app.get('/api/policy', (_req, res) => {
+  try {
+    const policy = sqliteStorage.getPolicy();
+    res.json(policy ?? {
+      strategy: 'balanced',
+      auto_pay_limit: 1.0,
+      single_transaction_limit: 5.0,
+      daily_budget: 20.0,
+      monthly_budget: 100.0,
+      allowed_categories: ['market_data', 'api', 'model', 'compute'],
+      notification_mode: 'detailed',
+      updated_at: new Date().toISOString(),
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to load policy' });
+  }
+});
+
+app.post('/api/policy', (req, res) => {
+  try {
+    const patch = req.body as Partial<Policy>;
+    const current = sqliteStorage.getPolicy();
+    const initialized: Policy = current ?? {
+      strategy: 'balanced',
+      auto_pay_limit: 1.0,
+      single_transaction_limit: 5.0,
+      daily_budget: 20.0,
+      monthly_budget: 100.0,
+      allowed_categories: ['market_data', 'api', 'model', 'compute'],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const updated = { ...initialized, ...patch, updated_at: new Date().toISOString() } as Policy;
+    sqliteStorage.savePolicy(updated);
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: 'Failed to save policy' });
+  }
+});
+
+// ─── Vendors ─────────────────────────────────────────────────────────────────
+
+// In-memory vendor registry for demo
+const vendorRegistry: Array<{
+  id: string; name: string; url: string; category: string;
+  source: string; status: string;
+}> = [
+  { id: 'v1', name: 'AlphaData', url: 'https://alpha.data', category: 'api', source: 'treasury_verified', status: 'usable' },
+  { id: 'v2', name: 'SignalX', url: 'https://signalx.ai', category: 'api', source: 'treasury_verified', status: 'usable' },
+  { id: 'v3', name: 'DataPro', url: 'https://datapro.io', category: 'market_data', source: 'ai_discovered', status: 'usable' },
+];
+
+app.get('/api/vendors', (_req, res) => {
+  res.json(vendorRegistry);
+});
+
+app.post('/api/vendors', (req, res) => {
+  const { url } = req.body as { url?: string };
+  if (!url) { res.status(400).json({ error: 'url required' }); return; }
+  const name = new URL(url).hostname.replace('www.', '');
+  const vendor = { id: `v-${Date.now()}`, name, url, category: 'api', source: 'user_added', status: 'pending' };
+  vendorRegistry.push(vendor);
+  res.json(vendor);
+});
+
+app.post('/api/vendors/:id/status', (req, res) => {
+  const vendor = vendorRegistry.find(v => v.id === req.params.id);
+  if (!vendor) { res.status(404).json({ error: 'Not found' }); return; }
+  vendor.status = req.body.status ?? vendor.status;
+  res.json(vendor);
+});
+
+// ─── Approval ────────────────────────────────────────────────────────────────
+
+app.post('/api/approve', async (req, res) => {
+  try {
+    const { request_id } = req.body as { request_id?: string };
+    if (!request_id) { res.status(400).json({ error: 'request_id required' }); return; }
+    // Call MCP via HTTP adapter — for demo, use direct function call
+    const { approvePurchase } = await import('../runtime/treasury.js') as any;
+    const result = await approvePurchase(request_id);
+    res.json(result);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+});
+
+app.post('/api/reject', async (req, res) => {
+  try {
+    const { request_id } = req.body as { request_id?: string };
+    if (!request_id) { res.status(400).json({ error: 'request_id required' }); return; }
+    const { rejectPurchase } = await import('../runtime/treasury.js') as any;
+    const result = await rejectPurchase(request_id);
+    res.json(result);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 
 const PORT = parseInt(process.env.DEMO_PORT || '3333', 10);

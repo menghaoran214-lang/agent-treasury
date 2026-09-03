@@ -68,7 +68,7 @@ async function waitForServer(port: number, runId: string, timeout = 10000): Prom
             } else { resolve(null); }
           });
         });
-        req.on('error', () => resolve(null));
+        req.on('error', (e: Error) => { lastError = e.message; resolve(null); });
         req.end();
       });
       if (result && result.status === 'ok') {
