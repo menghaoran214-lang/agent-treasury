@@ -201,7 +201,12 @@ app.post('/api/demo/reset', (_req, res) => {
 });
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    run_id: process.env.TREASURY_RUN_ID ?? 'manual',
+    pid: process.pid,
+  });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────

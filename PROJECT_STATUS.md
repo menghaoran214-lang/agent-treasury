@@ -12,6 +12,15 @@
 | 4.5 | Real Payment Proof & Demo Hardening | ✅ Done |
 | 5 | Champion Judge Demo (Autonomous Fallback) | ✅ Done |
 
+## Test Infrastructure
+
+- **Dynamic ports**: Gate5 uses `net.createServer().listen(0)` — each run gets a random free port. No port conflicts.
+- **RUN_ID**: Each Gate5 run generates `g5-<timestamp>-<random>` and passes via `TREASURY_RUN_ID` env var. Health endpoint returns `run_id`. Mismatched run_id → `STALE_SERVER_DETECTED`.
+- **Unique DB per run**: `treasury-g5-<runId>.db` and `treasury-e2e-<timestamp>.db`. No state sharing between runs.
+- **Direct node launch**: Both MCP and Gate5 use `node --import tsx` (no npx wrapper) so `proc.kill()` kills the actual server process.
+- **Two-phase cleanup**: SIGTERM → wait → `process.kill(pid, 0)` leak check → SIGKILL if needed. MCP E2E prints "MCP server exited cleanly" or `[FAIL] MCP_SERVER_LEAK`.
+- **No manual cleanup**: `npm run test:all` requires no fuser/pkill/manual intervention between runs.
+
 ## Gate 5 Summary
 
 **Autonomous Fallback Demo**:

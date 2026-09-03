@@ -5,7 +5,7 @@
 import { spawn } from 'child_process';
 import { createInterface } from 'readline';
 
-const DB_PATH = '/tmp/treasury-e2e.db';
+const DB_PATH = `/tmp/treasury-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.db`;
 
 interface JsonRpcRequest { jsonrpc: '2.0'; id: number; method: string; params?: Record<string, unknown>; }
 interface JsonRpcResponse { jsonrpc: '2.0'; id: number; result?: unknown; error?: { code: number; message: string; data?: unknown }; }
@@ -24,8 +24,8 @@ function send(s: JsonRpcRequest): Promise<unknown> {
 
 async function connect(): Promise<void> {
   return new Promise((resolve) => {
-    // Use unique DB per run to avoid state pollution
-    proc = spawn('npx', ['tsx', 'src/mcp/server.ts'], {
+    // Use node directly (no npx wrapper) so proc.kill() kills actual server process
+    proc = spawn(process.execPath, ['--import', 'tsx', 'src/mcp/server.ts'], {
       cwd: '/mnt/d/MM/开发/项目/agent-treasury',
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, TREASURY_DB_PATH: DB_PATH, TREASURY_TEST_MODE: '1' },
@@ -273,8 +273,12 @@ async function main() {
   console.log('\n--- Persistence Restart ---');
   let persistenceOk = false;
   try {
-    proc.kill();
-  await new Promise<void>((resolve) => { proc.on('exit', () => resolve()); setTimeout(resolve, 2000); }); // wait for child to fully exit before next test
+    proc.kill('SIGTERM');
+    await new Promise<void>((resolve) => { proc.on('exit', () => resolve()); setTimeout(resolve, 3000); });
+
+    // Verify child is dead
+    try { process.kill(proc.pid!, 0); console.log('  [WARN] MCP server still alive after SIGTERM'); } catch { /* ESRCH = dead */ }
+
     await new Promise(r => setTimeout(r, 500));
 
     // Re-connect with same DB
@@ -288,8 +292,18 @@ async function main() {
     results.push(['Persistence restart', persistenceOk]); if (persistenceOk) passed++;
   } catch (e) { console.error('[ERR]', e); results.push(['Persistence restart', false]); }
 
-  proc.kill();
-  await new Promise<void>((resolve) => { proc.on('exit', () => resolve()); setTimeout(resolve, 2000); }); // wait for child to fully exit before next test
+  proc.kill('SIGTERM');
+  await new Promise<void>((resolve) => { proc.on('exit', () => resolve()); setTimeout(resolve, 3000); });
+  // Verify process is dead
+  let leaked = false;
+  try { process.kill(proc.pid!, 0); leaked = true; } catch { /* ESRCH = dead */ }
+  if (leaked) {
+    proc.kill('SIGKILL');
+    await new Promise(r => setTimeout(r, 500));
+    try { process.kill(proc.pid!, 0); console.log('  [FAIL] MCP_SERVER_LEAK: process still alive after SIGKILL'); } catch {}
+  } else {
+    console.log('  MCP server exited cleanly');
+  }
 
   console.log(`\n=== Results: ${passed}/${results.length} passed ===`);
   results.forEach(([n, ok]) => console.log(`  ${ok ? '[PASS]' : '[FAIL]'} ${n}`));

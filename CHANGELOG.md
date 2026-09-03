@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0] — 2026-09-03
+
+### Test Harness Stabilization
+
+- MCP E2E: `npx tsx` → `node --import tsx` (no npx wrapper, direct PID)
+- MCP E2E: SIGTERM → SIGKILL two-phase cleanup + `process.kill(pid, 0)` leak verification
+- MCP E2E: unique DB per run (`treasury-e2e-<timestamp>.db`)
+- Gate5: dynamic port via `net.createServer().listen(0)` — no fixed 3333
+- Gate5: `TREASURY_RUN_ID` env var passed to server
+- Gate5: health endpoint returns `run_id` + `pid`; stale server mismatch → `STALE_SERVER_DETECTED`
+- Gate5: unique DB per run (`treasury-g5-<runId>.db`)
+- Gate5: `npx tsx` → `node --import tsx` (no npx wrapper)
+- Gate5: removed all `fuser`/`pkill`/`ss` parsing from test harness
+- Gate5: `node --import tsx` launch confirmed working
+
 ## [0.6.0] — 2026-09-03
 
 ### Added
