@@ -96,7 +96,7 @@ async function run() {
   const server = spawn('node', ['--import', 'tsx', 'src/server/demoServer.ts'], {
     env: { ...process.env, TREASURY_DB_PATH: dbPath, TREASURY_PAYMENT_MODE: 'mock', TREASURY_RUN_ID: runId, DEMO_PORT: String(port) },
     cwd: '/mnt/d/MM/开发/项目/agent-treasury',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', 'inherit', 'inherit'],
   });
 
   let passed = 0;
