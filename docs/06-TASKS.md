@@ -46,6 +46,7 @@ Last synchronized: 2026-09-04
 - [x] Pending approvals and analytics pages
 - [x] Responsive Binance-style UI V2
 - [x] Complete Simplified Chinese / English switching
+- [x] Persistent runtime payment events wired to toast, approval, and exception layers
 
 ## Next
 

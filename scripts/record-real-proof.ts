@@ -31,6 +31,11 @@ const vendor: ProviderOffer = {
 };
 const existing = sqliteStorage.getPaymentRecord(request.id);
 const existingPurchase = sqliteStorage.getPurchase(request.id);
+sqliteStorage.saveTreasuryEvent({
+  id: `${request.id}:payment_completed`, event_type: 'payment_completed', severity: 'success', purchase_id: request.id,
+  created_at: REAL_PAYMENT_EVIDENCE.verified_at,
+  data: { amount: vendor.price, currency: vendor.currency, chain: 'BSC', vendor: vendor.provider_name, tx_hash: REAL_PAYMENT_EVIDENCE.tx_hash, receipt_id: existingPurchase?.receipt_id },
+});
 if (existing?.payment_state === 'completed' && existing.reference === REAL_PAYMENT_EVIDENCE.tx_hash) {
   console.log(JSON.stringify({ success: true, idempotent_reuse: true, purchase_id: request.id, receipt_id: existingPurchase?.receipt_id, payment_state: 'completed', transaction_reference: existing.reference }));
   process.exit(0);

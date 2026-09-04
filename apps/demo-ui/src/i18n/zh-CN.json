@@ -82,6 +82,14 @@
     "exceptionsN": "异常",
     "viewLedger": "查看账单"
   },
+  "events": {
+    "processingTitle": "正在处理链上支付",
+    "completedTitle": "链上支付已完成",
+    "failedTitle": "支付失败",
+    "failedBody": "本次支付没有完成，资金不会自动重试发送。",
+    "unknownTitle": "支付结果需要核查",
+    "unknownBody": "网络响应不确定，系统已暂停重试，请先核对链上记录。"
+  },
   "approval": {
     "title": "需要人工审批",
     "confirmPrompt": "本次交易超过你的自动支付权限，需要你确认。",

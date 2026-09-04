@@ -183,6 +183,10 @@ export const binancePaymentProvider: PaymentProvider = {
       token_address: route.token_address,
       recipient: route.recipient,
     });
+    sqliteStorage.saveTreasuryEvent({
+      id: `${request.id}:payment_processing`, event_type: 'payment_processing', severity: 'info', purchase_id: request.id,
+      data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name },
+    });
 
     // ─── Execute ─────────────────────────────────────────────────────────
     const result = await callBawWalletSend(amount, route.recipient, route.chain_id, route.token_address);
@@ -203,6 +207,10 @@ export const binancePaymentProvider: PaymentProvider = {
         token_address: route.token_address,
         recipient: route.recipient,
         raw_response: { route: { ...route, recipient: `${route.recipient.slice(0, 6)}...${route.recipient.slice(-4)}` }, response: result.raw },
+      });
+      sqliteStorage.saveTreasuryEvent({
+        id: `${request.id}:payment_completed`, event_type: 'payment_completed', severity: 'success', purchase_id: request.id,
+        data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name, tx_hash: result.txHash },
       });
       return paymentStateResult(
         true, 'completed', result.txHash,
@@ -235,6 +243,11 @@ export const binancePaymentProvider: PaymentProvider = {
       token_address: route.token_address,
       recipient: route.recipient,
       raw_response: result.raw,
+    });
+    sqliteStorage.saveTreasuryEvent({
+      id: `${request.id}:payment_${finalState}`, event_type: finalState === 'unknown' ? 'payment_unknown' : 'payment_failed',
+      severity: finalState === 'unknown' ? 'warning' : 'error', purchase_id: request.id,
+      data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name, reason: result.error },
     });
 
     return paymentStateResult(false, finalState, result.txHash, finalMessage, 'binance', result.raw);

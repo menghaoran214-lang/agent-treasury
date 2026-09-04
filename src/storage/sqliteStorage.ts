@@ -80,6 +80,14 @@ const _db = (() => {
     created_at          TEXT NOT NULL,
     updated_at          TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS treasury_events (
+    id          TEXT PRIMARY KEY,
+    event_type  TEXT NOT NULL,
+    severity    TEXT NOT NULL,
+    purchase_id TEXT,
+    data_json   TEXT NOT NULL DEFAULT '{}',
+    created_at  TEXT NOT NULL
+  );
 `);
   const paymentColumns = new Set(((db as unknown as { prepare(s: string): { all(): Array<{ name: string }> } }).prepare('PRAGMA table_info(payment_records)').all()).map(c => c.name));
   const routeColumns: Record<string, string> = {
@@ -238,6 +246,37 @@ export const sqliteStorage = {
 
   clearLedgerEntries(): void {
     _db.prepare('DELETE FROM ledger_entries').run();
+  },
+
+  saveTreasuryEvent(event: {
+    id: string;
+    event_type: 'payment_processing' | 'payment_completed' | 'payment_failed' | 'payment_unknown' | 'approval_required';
+    severity: 'info' | 'success' | 'warning' | 'error';
+    purchase_id?: string;
+    data?: Record<string, unknown>;
+    created_at?: string;
+  }): void {
+    _db.prepare(`
+      INSERT OR IGNORE INTO treasury_events (id, event_type, severity, purchase_id, data_json, created_at)
+      VALUES (:id, :event_type, :severity, :purchase_id, :data_json, :created_at)
+    `).run({
+      ...event,
+      purchase_id: event.purchase_id ?? null,
+      data_json: JSON.stringify(event.data ?? {}),
+      created_at: event.created_at ?? new Date().toISOString(),
+    });
+  },
+
+  getTreasuryEvents(limit = 50): Array<{
+    id: string; event_type: string; severity: string; purchase_id: string | null;
+    data: Record<string, unknown>; created_at: string;
+  }> {
+    const rows = _db.prepare('SELECT * FROM treasury_events ORDER BY created_at DESC LIMIT ?').all(limit) as Array<Record<string, unknown>>;
+    return rows.reverse().map(row => ({
+      id: String(row.id), event_type: String(row.event_type), severity: String(row.severity),
+      purchase_id: row.purchase_id ? String(row.purchase_id) : null,
+      data: row.data_json ? JSON.parse(String(row.data_json)) : {}, created_at: String(row.created_at),
+    }));
   },
 
   // ─── Payment Records ─────────────────────────────────────────────────────

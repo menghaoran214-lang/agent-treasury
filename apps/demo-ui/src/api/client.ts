@@ -163,3 +163,16 @@ export const approvalApi = {
   approve: (requestId: string) => post<{ request_id: string; status: string; receipt_id?: string }>('/approve', { request_id: requestId }),
   reject: (requestId: string) => post<{ request_id: string; status: string }>('/reject', { request_id: requestId }),
 };
+
+export interface TreasuryEvent {
+  id: string;
+  event_type: 'payment_processing' | 'payment_completed' | 'payment_failed' | 'payment_unknown' | 'approval_required';
+  severity: 'info' | 'success' | 'warning' | 'error';
+  purchase_id: string | null;
+  data: { amount?: number; currency?: string; chain?: string; vendor?: string; reason?: string; tx_hash?: string; receipt_id?: string };
+  created_at: string;
+}
+
+export const eventApi = {
+  list: () => get<{ events: TreasuryEvent[] }>('/events?limit=50'),
+};

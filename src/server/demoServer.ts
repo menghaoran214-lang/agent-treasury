@@ -173,6 +173,12 @@ app.get('/api/evidence', (_req, res) => {
   });
 });
 
+app.get('/api/events', (_req, res) => {
+  const requested = Number(_req.query.limit ?? 50);
+  const limit = Number.isFinite(requested) ? Math.max(1, Math.min(100, requested)) : 50;
+  res.json({ events: sqliteStorage.getTreasuryEvents(limit) });
+});
+
 app.post('/api/demo/run', async (req, res) => {
   sqliteStorage.clearLedgerEntries();
   const runId = randomUUID();

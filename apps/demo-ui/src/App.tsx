@@ -12,6 +12,7 @@ import ReportsPage from './pages/ReportsPage';
 import ToastContainer from './components/ToastContainer';
 import ApprovalModal from './components/ApprovalModal';
 import ExceptionModal from './components/ExceptionModal';
+import { eventApi, type TreasuryEvent } from './api/client';
 
 export type Page = 'setup' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
 
@@ -91,6 +92,38 @@ export default function App() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const seen = new Set<string>(JSON.parse(localStorage.getItem('treasury-seen-events') || '[]'));
+    let active = true;
+    const handleEvent = (event: TreasuryEvent) => {
+      if (seen.has(event.id)) return;
+      seen.add(event.id);
+      localStorage.setItem('treasury-seen-events', JSON.stringify(Array.from(seen).slice(-100)));
+      const amount = event.data.amount != null ? `${event.data.amount} ${event.data.currency ?? ''}`.trim() : '';
+      const context = [event.data.vendor, amount, event.data.chain].filter(Boolean).join(' · ');
+      if (event.event_type === 'payment_failed' || event.event_type === 'payment_unknown') {
+        setState(s => ({ ...s, exception: {
+          title: i18n.t(event.event_type === 'payment_unknown' ? 'events.unknownTitle' : 'events.failedTitle'),
+          description: i18n.t(event.event_type === 'payment_unknown' ? 'events.unknownBody' : 'events.failedBody'),
+          reason: event.data.reason || context,
+        }}));
+        return;
+      }
+      if (event.event_type === 'payment_processing' && state.notificationMode !== 'detailed') return;
+      if (event.event_type === 'payment_completed' && state.notificationMode === 'silent') return;
+      showToast({
+        title: i18n.t(event.event_type === 'payment_completed' ? 'events.completedTitle' : 'events.processingTitle'),
+        body: context,
+        status: event.event_type === 'payment_completed' ? 'success' : 'info',
+        exitAt: Date.now() + (event.event_type === 'payment_completed' ? 6000 : 4000),
+      });
+    };
+    const poll = () => eventApi.list().then(({ events }) => { if (active) events.forEach(handleEvent); }).catch(() => {});
+    poll();
+    const timer = window.setInterval(poll, 1500);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [state.notificationMode]);
 
   useEffect(() => {
     const syncPage = () => setState(s => ({ ...s, page: pageFromHash(), receiptId: receiptFromHash() ?? s.receiptId }));

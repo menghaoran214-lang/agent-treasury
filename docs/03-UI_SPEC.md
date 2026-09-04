@@ -53,6 +53,22 @@ Recent:
 ## Visual Direction
 
 - Dark mode primary
+
+## Runtime Notification Contract
+
+The UI polls persistent Treasury events while the page is open. Notification mode controls normal events, never safety-critical ones:
+
+| Runtime event | Detailed | Concise | Silent |
+|---|---|---|---|
+| Payment started / processing | progress toast | hidden | hidden |
+| Payment completed | success toast | success toast | hidden |
+| Human approval required | approval modal | approval modal | approval modal |
+| Failed / blocked / unknown result | exception modal | exception modal | exception modal |
+
+- Toasts are non-blocking and auto-dismiss.
+- Approval and exception modals require user attention.
+- `UNKNOWN` never retries automatically.
+- Browser UI notifications require the Agent Treasury page to be open. Windows system notifications belong to Gate 8 productization.
 - Green = auto-approved, Yellow = human review, Red = blocked
 - Monospace numbers for amounts
 - Minimal chrome, data-dense

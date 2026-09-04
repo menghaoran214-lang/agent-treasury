@@ -82,6 +82,14 @@
     "exceptionsN": "Exceptions",
     "viewLedger": "View Ledger"
   },
+  "events": {
+    "processingTitle": "Processing On-Chain Payment",
+    "completedTitle": "On-Chain Payment Completed",
+    "failedTitle": "Payment Failed",
+    "failedBody": "This payment did not complete. Funds will not be sent again automatically.",
+    "unknownTitle": "Payment Result Needs Review",
+    "unknownBody": "The network result is uncertain. Automatic retry is paused until the transaction is checked."
+  },
   "approval": {
     "title": "Approval Required",
     "confirmPrompt": "This transaction exceeds your auto-pay limit and requires confirmation.",

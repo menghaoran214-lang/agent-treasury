@@ -327,6 +327,15 @@ async function run() {
     assert(cfg.paymentTokenSymbol === 'USDT', `expected USDT symbol, got ${cfg.paymentTokenSymbol}`);
   });
 
+  await test('Treasury events are persistent and duplicate-safe', async () => {
+    const eventId = 'gate45-event-payment-completed';
+    sqliteStorage.saveTreasuryEvent({ id: eventId, event_type: 'payment_completed', severity: 'success', purchase_id: 'gate45-event', data: { amount: 0.1, currency: 'USDT' } });
+    sqliteStorage.saveTreasuryEvent({ id: eventId, event_type: 'payment_completed', severity: 'success', purchase_id: 'gate45-event', data: { amount: 999 } });
+    const matches = sqliteStorage.getTreasuryEvents(100).filter(event => event.id === eventId);
+    assert(matches.length === 1, `expected one event, got ${matches.length}`);
+    assert(matches[0].data.amount === 0.1, 'duplicate insert must not rewrite the original event');
+  });
+
   await test('BSC USDC contract is rejected by the BSC-USDT route', async () => {
     const USDC_CONTRACT = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
     process.env.TREASURY_PAYMENT_MODE = 'binance';
