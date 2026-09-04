@@ -69,6 +69,7 @@ The UI polls persistent Treasury events while the page is open. Notification mod
 - Approval and exception modals require user attention.
 - `UNKNOWN` never retries automatically.
 - Browser UI notifications require the Agent Treasury page to be open. Windows system notifications belong to Gate 8 productization.
+- Judge Demo reset is namespace-scoped (`judge-demo-*`) and must never clear real purchases, receipts, payments, or ledger entries.
 - Green = auto-approved, Yellow = human review, Red = blocked
 - Monospace numbers for amounts
 - Minimal chrome, data-dense

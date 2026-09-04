@@ -180,7 +180,7 @@ app.get('/api/events', (_req, res) => {
 });
 
 app.post('/api/demo/run', async (req, res) => {
-  sqliteStorage.clearLedgerEntries();
+  sqliteStorage.clearDemoData();
   const runId = randomUUID();
   const state: DemoState = {
     id: runId,
@@ -203,7 +203,7 @@ app.get('/api/demo/state/:runId', (req, res) => {
 });
 
 app.post('/api/demo/reset', (_req, res) => {
-  sqliteStorage.clearLedgerEntries();
+  sqliteStorage.clearDemoData();
   demoRuns.clear();
   res.json({ reset: true });
 });

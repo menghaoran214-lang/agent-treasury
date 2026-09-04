@@ -47,6 +47,7 @@ Last synchronized: 2026-09-04
 - [x] Responsive Binance-style UI V2
 - [x] Complete Simplified Chinese / English switching
 - [x] Persistent runtime payment events wired to toast, approval, and exception layers
+- [x] Judge Demo and Gate 4.5 tests isolated from real Treasury ledger data
 
 ## Next
 

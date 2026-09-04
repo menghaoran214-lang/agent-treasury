@@ -85,6 +85,7 @@ export interface LedgerStats {
   pending: number;
   ledger: number;
   totalSpend: number;
+  totalsByCurrency: Record<string, number>;
   totalCount: number;
 }
 

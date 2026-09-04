@@ -37,6 +37,11 @@ sqliteStorage.saveTreasuryEvent({
   data: { amount: vendor.price, currency: vendor.currency, chain: 'BSC', vendor: vendor.provider_name, tx_hash: REAL_PAYMENT_EVIDENCE.tx_hash, receipt_id: existingPurchase?.receipt_id },
 });
 if (existing?.payment_state === 'completed' && existing.reference === REAL_PAYMENT_EVIDENCE.tx_hash) {
+  const existingReceipt = existingPurchase?.receipt_id ? sqliteStorage.getReceipt(existingPurchase.receipt_id) : null;
+  const alreadyInLedger = sqliteStorage.getAllEntries().some(entry => entry.receipt.purchase_id === request.id);
+  if (existingReceipt && !alreadyInLedger) {
+    sqliteStorage.addLedgerEntry({ receipt: existingReceipt, policy_snapshot: DEFAULT_POLICY, request_snapshot: request }, request.id);
+  }
   console.log(JSON.stringify({ success: true, idempotent_reuse: true, purchase_id: request.id, receipt_id: existingPurchase?.receipt_id, payment_state: 'completed', transaction_reference: existing.reference }));
   process.exit(0);
 }

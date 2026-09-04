@@ -19,6 +19,7 @@ export default function LedgerPage({ onViewReceipt }: Props) {
 
   const entries = data?.entries ?? [];
   const stats = data?.stats;
+  const currencyTotals = stats ? Object.entries(stats.totalsByCurrency ?? {}) : [];
 
   return (
     <div>
@@ -29,7 +30,9 @@ export default function LedgerPage({ onViewReceipt }: Props) {
         <div className="grid-3" style={{ marginBottom: 24 }}>
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--mono)', color: 'var(--green)' }}>
-              {stats.totalSpend.toFixed(2)} USDC
+              {currencyTotals.length > 0
+                ? currencyTotals.map(([currency, amount]) => `${Number(amount).toFixed(2)} ${currency}`).join(' + ')
+                : '0.00 —'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{t('ledger.totalSpend')}</div>
           </div>

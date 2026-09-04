@@ -241,11 +241,24 @@ export const sqliteStorage = {
     const pending = (_db.prepare("SELECT COUNT(*) as c FROM purchases WHERE status = 'pending'").get() as { c: number }).c;
     const ledger = (_db.prepare('SELECT COUNT(*) as c FROM ledger_entries').get() as { c: number }).c;
     const totalSpend = (_db.prepare("SELECT SUM(amount) as s FROM ledger_entries WHERE status = 'completed'").get() as { s: number | null }).s ?? 0;
-    return { purchases, completed, pending, ledger, totalSpend, totalCount: ledger };
+    const totalsByCurrency = Object.fromEntries((_db.prepare("SELECT currency, SUM(amount) AS amount FROM ledger_entries WHERE status = 'completed' GROUP BY currency ORDER BY currency").all() as Array<{ currency: string; amount: number }>).map(row => [row.currency, row.amount]));
+    return { purchases, completed, pending, ledger, totalSpend, totalsByCurrency, totalCount: ledger };
   },
 
   clearLedgerEntries(): void {
     _db.prepare('DELETE FROM ledger_entries').run();
+  },
+
+  /** Remove Judge Demo rows only. Real purchases, receipts and ledger entries are never touched. */
+  clearDemoData(): void {
+    const prefix = 'judge-demo-%';
+    const clear = _db.transaction(() => {
+      _db.prepare('DELETE FROM ledger_entries WHERE purchase_id LIKE ?').run(prefix);
+      _db.prepare('DELETE FROM receipts WHERE purchase_id LIKE ?').run(prefix);
+      _db.prepare('DELETE FROM payment_records WHERE purchase_id LIKE ?').run(prefix);
+      _db.prepare('DELETE FROM purchases WHERE id LIKE ?').run(prefix);
+    });
+    clear();
   },
 
   saveTreasuryEvent(event: {

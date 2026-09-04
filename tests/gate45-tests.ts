@@ -25,14 +25,10 @@ import { BSC_USDT_ROUTE, resolvePaymentRoute, routeFingerprint } from '../src/co
 import { PurchaseStrategy, ApprovalType } from '../src/domain/types.js';
 import type { PurchaseRequest, ProviderOffer } from '../src/domain/types.js';
 
-const TEST_DB = join(tmpdir(), 'treasury-g45.db');
+const TEST_DB = process.env.TREASURY_DB_PATH || join(tmpdir(), 'treasury-g45.db');
 
 async function freshDb() {
-  await rm(TEST_DB,           { force: true });
-  await rm(TEST_DB + '-wal',  { force: true });
-  await rm(TEST_DB + '-shm',  { force: true });
-  process.env.TREASURY_DB_PATH = TEST_DB;
-  // Re-initialize storage (singleton — just confirm we can re-save)
+  // sqliteStorage was initialized only after gate45-runner selected TEST_DB.
   sqliteStorage.savePaymentRecord({
     purchase_id: '__test_marker__',
     provider: 'mock',
@@ -334,6 +330,14 @@ async function run() {
     const matches = sqliteStorage.getTreasuryEvents(100).filter(event => event.id === eventId);
     assert(matches.length === 1, `expected one event, got ${matches.length}`);
     assert(matches[0].data.amount === 0.1, 'duplicate insert must not rewrite the original event');
+  });
+
+  await test('demo cleanup cannot delete real payment records', async () => {
+    sqliteStorage.savePaymentRecord({ purchase_id: 'judge-demo-cleanup-test', provider: 'mock', payment_state: 'completed' });
+    sqliteStorage.savePaymentRecord({ purchase_id: 'real-payment-must-survive', provider: 'binance', payment_state: 'completed', reference: '0xreal' });
+    sqliteStorage.clearDemoData();
+    assert(sqliteStorage.getPaymentRecord('judge-demo-cleanup-test') === null, 'demo record should be removed');
+    assert(sqliteStorage.getPaymentRecord('real-payment-must-survive')?.reference === '0xreal', 'real record must survive demo reset');
   });
 
   await test('BSC USDC contract is rejected by the BSC-USDT route', async () => {
