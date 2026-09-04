@@ -4,7 +4,7 @@
  * Security:
  * - execFile (not exec) — no shell injection
  * - All params validated before calling baw
- * - BSC/USDC only — no asset/network flexibility
+ * - BSC/USDT only — one verified settlement rail, no implicit swap/bridge
  * - Persistent idempotency via SQLite payment_records table
  * - Explicit PaymentState machine: UNPROCESSED → PROCESSING → COMPLETED | FAILED | UNKNOWN
  */
@@ -15,6 +15,8 @@ import type { PaymentProvider, PaymentProviderResult } from './paymentAdapter.js
 import type { ProviderOffer, PurchaseRequest, ApprovalType } from '../domain/types.js';
 import { ApprovalType as AT } from '../domain/types.js';
 import { sqliteStorage } from '../storage/sqliteStorage.js';
+import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
+import { BSC_USDT_ROUTE, resolvePaymentRoute, routeFingerprint } from '../config/paymentRoutes.js';
 
 const execAsync = promisify(execFile);
 
@@ -24,36 +26,10 @@ export function getBinanceConfig() {
   return {
     bawPath: process.env.BAW_CLI_PATH || 'baw',
     chainId: process.env.TREASURY_WALLET_CHAIN_ID || '56',
-    // USDC on BSC mainnet — MUST be this contract, no alternatives in MVP
-    paymentToken: process.env.TREASURY_PAYMENT_TOKEN || '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+    paymentToken: process.env.TREASURY_PAYMENT_TOKEN || BSC_USDT_ROUTE.token_address,
+    paymentTokenSymbol: 'USDT',
     mode: process.env.TREASURY_PAYMENT_MODE || 'mock',
   };
-}
-
-// ─── Vendor address map (approved registry — agent cannot override) ───────────
-// In production these come from vendor registry. Gate 4 demo uses placeholders.
-// These are DEMO addresses — NOT used for real Binance payments.
-const VENDOR_ADDRESSES: Record<string, string> = {
-  'provider-a':    '0x0000000000000000000000000000000000000001',
-  'provider-b':    '0x0000000000000000000000000000000000000002',
-  'provider-c':    '0x0000000000000000000000000000000000000003',
-  'provider-overpriced': '0x0000000000000000000000000000000000000004',
-  'provider-y':    '0x0000000000000000000000000000000000000005',
-};
-
-function getVendorAddress(providerId: string): string {
-  return VENDOR_ADDRESSES[providerId] ?? '0x0000000000000000000000000000000000000000';
-}
-
-// ─── Real proof recipient — requires explicit TREASURY_REAL_PROOF_RECIPIENT env var ──
-
-function getRealProofRecipient(): string | null {
-  const addr = process.env.TREASURY_REAL_PROOF_RECIPIENT?.trim();
-  if (!addr) return null;
-  // Basic EVM address validation: 42 chars, starts with 0x, not all zeros
-  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) return null;
-  if (/^0x0+$/.test(addr)) return null; // all zeros
-  return addr;
 }
 
 // ─── Payment state machine ─────────────────────────────────────────────────────
@@ -173,24 +149,23 @@ export const binancePaymentProvider: PaymentProvider = {
     }
 
     // ─── Validate ─────────────────────────────────────────────────────────
-    const recipient = getVendorAddress(provider.provider_id);
     const amount = provider.price.toString();
-
-    // BSC mainnet only — no testnet unless explicitly verified with BAW
-    if (cfg.chainId !== '56') {
-      return paymentStateResult(false, 'failed', undefined, `Unsupported chain: ${cfg.chainId} (BSC Mainnet 56 only)`, 'binance');
-    }
-    // USDC contract on BSC — no USDT, no alternatives
-    const USDC_CONTRACT = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
-    if (cfg.paymentToken.toLowerCase() !== USDC_CONTRACT.toLowerCase()) {
-      return paymentStateResult(false, 'failed', undefined, `Unsupported token: ${cfg.paymentToken} (BSC USDC only: ${USDC_CONTRACT})`, 'binance');
-    }
     if (provider.price <= 0) {
       return paymentStateResult(false, 'failed', undefined, `Invalid amount: ${provider.price}`, 'binance');
     }
-    // Demo addresses — reject for real payment mode
-    if (recipient === '0x0000000000000000000000000000000000000000') {
-      return paymentStateResult(false, 'failed', undefined, `No address for vendor: ${provider.provider_id}`, 'binance');
+    const policy = sqliteStorage.getPolicy() ?? DEFAULT_POLICY;
+    const resolved = resolvePaymentRoute({
+      provider,
+      policy,
+      configuredChainId: cfg.chainId,
+      configuredToken: cfg.paymentToken,
+    });
+    if (!resolved.ok) return paymentStateResult(false, 'failed', undefined, resolved.reason, 'binance');
+    const route = resolved.route;
+    const fingerprint = routeFingerprint(request.id, route, provider.price);
+
+    if (prior?.route_fingerprint && prior.route_fingerprint !== fingerprint) {
+      return paymentStateResult(false, 'failed', undefined, 'Payment route changed for an existing purchase — manual review required', 'binance');
     }
 
     // ─── Persist PROCESSING ───────────────────────────────────────────────
@@ -202,10 +177,15 @@ export const binancePaymentProvider: PaymentProvider = {
       currency: provider.currency,
       vendor_id: provider.provider_id,
       vendor_name: provider.provider_name,
+      route_fingerprint: fingerprint,
+      chain_id: route.chain_id,
+      token_symbol: route.token_symbol,
+      token_address: route.token_address,
+      recipient: route.recipient,
     });
 
     // ─── Execute ─────────────────────────────────────────────────────────
-    const result = await callBawWalletSend(amount, recipient, cfg.chainId, cfg.paymentToken);
+    const result = await callBawWalletSend(amount, route.recipient, route.chain_id, route.token_address);
 
     if (result.success && result.txHash) {
       sqliteStorage.savePaymentRecord({
@@ -217,11 +197,16 @@ export const binancePaymentProvider: PaymentProvider = {
         currency: provider.currency,
         vendor_id: provider.provider_id,
         vendor_name: provider.provider_name,
-        raw_response: result.raw,
+        route_fingerprint: fingerprint,
+        chain_id: route.chain_id,
+        token_symbol: route.token_symbol,
+        token_address: route.token_address,
+        recipient: route.recipient,
+        raw_response: { route: { ...route, recipient: `${route.recipient.slice(0, 6)}...${route.recipient.slice(-4)}` }, response: result.raw },
       });
       return paymentStateResult(
         true, 'completed', result.txHash,
-        `Binance payment: ${amount} ${provider.currency} → ${provider.provider_name} (tx: ${result.txHash})`,
+        `Binance payment: ${amount} ${route.token_symbol} on ${route.chain_name} → ${provider.provider_name} (tx: ${result.txHash})`,
         'binance', result.raw,
       );
     }
@@ -244,6 +229,11 @@ export const binancePaymentProvider: PaymentProvider = {
       currency: provider.currency,
       vendor_id: provider.provider_id,
       vendor_name: provider.provider_name,
+      route_fingerprint: fingerprint,
+      chain_id: route.chain_id,
+      token_symbol: route.token_symbol,
+      token_address: route.token_address,
+      recipient: route.recipient,
       raw_response: result.raw,
     });
 

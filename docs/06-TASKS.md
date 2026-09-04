@@ -31,7 +31,7 @@ Last synchronized: 2026-09-04
 
 - [x] PaymentProvider abstraction
 - [x] `baw wallet send` integration path
-- [x] Input validation and fixed BSC/USDC scope
+- [x] Input validation and first real route fixed to BSC/USDT
 - [x] Persistent idempotency and payment-state machine
 - [x] Autonomous fallback demo and stable process cleanup
 - [x] Mock end-to-end proof
@@ -53,7 +53,8 @@ Last synchronized: 2026-09-04
 
 - [x] Install official Binance Agentic Wallet CLI in the formal runtime environment
 - [x] User-controlled QR sign-in and connection verification
-- [ ] Approved vendor address registry; remove demo recipient placeholders
+- [x] Local verified real-proof vendor route; demo vendors cannot enter Binance payment mode
+- [ ] Durable encrypted vendor registry for multiple production vendors
 - [x] Wallet status, supported-chain, address, and balance preflight
 - [ ] Explicitly confirmed minimal real transaction
 - [ ] Match chain transaction hash, Treasury receipt, and ledger record

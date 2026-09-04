@@ -81,6 +81,13 @@ const _db = (() => {
     updated_at          TEXT NOT NULL
   );
 `);
+  const paymentColumns = new Set(((db as unknown as { prepare(s: string): { all(): Array<{ name: string }> } }).prepare('PRAGMA table_info(payment_records)').all()).map(c => c.name));
+  const routeColumns: Record<string, string> = {
+    route_fingerprint: 'TEXT', chain_id: 'TEXT', token_symbol: 'TEXT', token_address: 'TEXT', recipient: 'TEXT',
+  };
+  for (const [name, type] of Object.entries(routeColumns)) {
+    if (!paymentColumns.has(name)) (db as unknown as { exec(s: string): void }).exec(`ALTER TABLE payment_records ADD COLUMN ${name} ${type}`);
+  }
   return db;
 })();
 
@@ -246,15 +253,22 @@ export const sqliteStorage = {
     vendor_name?: string;
     raw_response?: unknown;
     idempotent_reuse?: boolean;
+    route_fingerprint?: string;
+    chain_id?: string;
+    token_symbol?: string;
+    token_address?: string;
+    recipient?: string;
   }) {
     const now = new Date().toISOString();
     _db.prepare(`
       INSERT OR REPLACE INTO payment_records
         (purchase_id, provider, payment_state, reference, amount, currency,
-         vendor_id, vendor_name, raw_response, idempotent_reuse, created_at, updated_at)
+         vendor_id, vendor_name, raw_response, idempotent_reuse, route_fingerprint,
+         chain_id, token_symbol, token_address, recipient, created_at, updated_at)
       VALUES
         (:purchase_id, :provider, :payment_state, :reference, :amount, :currency,
-         :vendor_id, :vendor_name, :raw_response, :idempotent_reuse, :created_at, :updated_at)
+         :vendor_id, :vendor_name, :raw_response, :idempotent_reuse, :route_fingerprint,
+         :chain_id, :token_symbol, :token_address, :recipient, :created_at, :updated_at)
     `).run({
       purchase_id: data.purchase_id,
       provider: data.provider,
@@ -266,6 +280,11 @@ export const sqliteStorage = {
       vendor_name: data.vendor_name ?? null,
       raw_response: data.raw_response != null ? JSON.stringify(data.raw_response) : null,
       idempotent_reuse: data.idempotent_reuse ? 1 : 0,
+      route_fingerprint: data.route_fingerprint ?? null,
+      chain_id: data.chain_id ?? null,
+      token_symbol: data.token_symbol ?? null,
+      token_address: data.token_address ?? null,
+      recipient: data.recipient ?? null,
       created_at: now,
       updated_at: now,
     });
@@ -284,6 +303,11 @@ export const sqliteStorage = {
     idempotent_reuse: boolean;
     created_at: string;
     updated_at: string;
+    route_fingerprint: string | null;
+    chain_id: string | null;
+    token_symbol: string | null;
+    token_address: string | null;
+    recipient: string | null;
   } | null {
     const row = _db.prepare('SELECT * FROM payment_records WHERE purchase_id = ?').get(purchaseId) as Record<string, unknown> | undefined;
     if (!row) return null;

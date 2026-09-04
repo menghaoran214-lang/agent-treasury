@@ -9,6 +9,12 @@ export const DEFAULT_POLICY: Policy = {
   daily_budget: 20,
   monthly_budget: 100,
   allowed_categories: ['market_data', 'api', 'model', 'compute'],
+  allowed_payment_routes: [{
+    chain_id: '56',
+    token_symbol: 'USDT',
+    token_address: '0x55d398326f99059fF775485246999027B3197955',
+  }],
+  allow_bridge_or_swap: false,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

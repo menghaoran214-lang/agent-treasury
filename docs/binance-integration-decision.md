@@ -12,7 +12,12 @@
 4. **Payment = token transfer** — `baw wallet send` transfers USDT/BNB from wallet to recipient address. This IS the payment.
 5. **TxHash returned** — `baw wallet send` returns `{ success, data: { txHash } }` on broadcast. TxHash used as payment reference.
 
-### What IS Available from BAW
+### Installed wallet baseline (verified 2026-09-04)
+
+- BAW CLI: `1.9.0`
+- Binance Agentic Wallet Skill: `1.11.0`
+- Wallet status: connected after upgrade
+- First real settlement route: BSC mainnet + USDT only
 
 | Capability | Command | Status |
 |-----------|---------|--------|
@@ -22,11 +27,11 @@
 | Balance check | `baw wallet balance` | ✅ Available |
 | Tx history | `baw wallet tx-history` | ✅ Available |
 | Non-interactive M2M auth | — | ❌ NOT available |
-| x402 machine payment protocol | — | ❌ NOT available |
+| x402 machine payment protocol | `baw x402-payment` | ✅ CLI capability present; out of scope for first direct-transfer proof |
 
 ### What IS NOT Available
 
-- **x402**: Not found in any official Binance/BAW docs. No SDK, no protocol reference.
+- **x402**: now present in the installed CLI and Skill, but intentionally excluded from the first direct BSC-USDT proof so two payment mechanisms are not mixed in one validation.
 - **M2M API keys for payments**: BAW uses QR-code human auth, not API key auth.
 - **Server-side auto-pay without user**: Pure agent scenario requires pre-authenticated session.
 
@@ -39,21 +44,24 @@
 ## Vendor Payment Flow
 
 ```
-Treasury selects vendor
-  → Vendor has a wallet address (or receives payment via vendor's payment rail)
+Treasury selects vendor whose offer is denominated in USDT
+  → Route resolver intersects verified vendor route + policy allowlist + configured wallet rail
+  → Only BSC mainnet (56) + USDT is enabled for the first real proof
   → Treasury calls `baw wallet send --amount X --recipient VENDOR_WALLET --tokenAddress USDT`
   → txHash returned → stored as payment_reference
   → receipt generated with txHash
 ```
 
-Note: The current mock providers (DataCheap, MarketInsight Pro, UltraFeed) are fictional vendors without real wallet addresses. For Gate 4 demo, vendor addresses will be placeholders.
+Note: mock providers remain fictional and can never be paid in Binance mode. The real proof vendor ID and recipient are local environment values; no real address is committed to Git.
 
 ## Environment Variables Required
 
 ```
-BAW_CLI_PATH=~/.npm-global/bin/baw        # path to baw CLI
+BAW_CLI_PATH=/home/meng2062/.local/bin/baw # verified local baw 1.9.0
 TREASURY_WALLET_CHAIN_ID=56              # BSC mainnet
 TREASURY_PAYMENT_TOKEN=0x55d398326f99059fF775485246999027B3197955  # USDT on BSC
+TREASURY_REAL_PROOF_VENDOR_ID=real-proof-vendor
+TREASURY_REAL_PROOF_RECIPIENT=<verified BSC recipient; local secret-like config only>
 TREASURY_PAYMENT_MODE=binance|mock       # explicit provider selection
 ```
 
@@ -62,4 +70,7 @@ TREASURY_PAYMENT_MODE=binance|mock       # explicit provider selection
 - `baw` CLI handles private key signing — Treasury never sees the key
 - Vendor address validation required before sending
 - Amount must match selected vendor's price exactly
-- Idempotency: same `purchase_id` → check if already paid before calling `baw wallet send`
+- Offer currency must be USDT; implicit currency conversion is rejected
+- Policy allowlist contains only BSC/USDT for the first proof
+- Bridge and swap are disabled; the agent cannot silently change chain or token
+- Idempotency records `purchase_id + chain + token contract + recipient + amount`

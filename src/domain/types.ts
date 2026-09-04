@@ -112,6 +112,14 @@ export interface ProviderOffer {
   metadata?: Record<string, unknown>;
 }
 
+export interface PaymentRoute {
+  chain_id: string;
+  chain_name: string;
+  token_symbol: string;
+  token_address: string;
+  recipient: string;
+}
+
 export interface ValueScore {
   provider_id: string;
   overall: number;
@@ -141,6 +149,10 @@ export interface Policy {
   daily_budget: number;
   monthly_budget: number;
   allowed_categories: ResourceType[];
+  /** Settlement rails allowed by policy. Omitted on legacy saved policies. */
+  allowed_payment_routes?: Array<Pick<PaymentRoute, 'chain_id' | 'token_symbol' | 'token_address'>>;
+  /** MVP safety boundary: bridging and swapping are never implicit. */
+  allow_bridge_or_swap?: boolean;
   created_at: string;
   updated_at: string;
 }

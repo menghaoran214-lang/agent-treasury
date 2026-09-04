@@ -21,6 +21,7 @@ import { tmpdir } from 'os';
 import { setPaymentProvider, mockPaymentProvider } from '../src/adapters/paymentAdapter.js';
 import { binancePaymentProvider, getBinanceConfig } from '../src/adapters/binancePaymentProvider.js';
 import { sqliteStorage } from '../src/storage/sqliteStorage.js';
+import { BSC_USDT_ROUTE, resolvePaymentRoute, routeFingerprint } from '../src/config/paymentRoutes.js';
 import { PurchaseStrategy, ApprovalType } from '../src/domain/types.js';
 import type { PurchaseRequest, ProviderOffer } from '../src/domain/types.js';
 
@@ -50,7 +51,7 @@ function makeRequest(id: string): PurchaseRequest {
     purpose: 'Gate 4.5 test',
     requirements: {},
     max_budget: 1.0,
-    currency: 'USDC',
+    currency: 'USDT',
     created_at: new Date().toISOString(),
   };
 }
@@ -59,7 +60,7 @@ const mockProviderOffer: ProviderOffer = {
   provider_id: 'provider-a',
   provider_name: 'DataCheap',
   price: 0.09,
-  currency: 'USDC',
+  currency: 'USDT',
   quality_score: 65,
   trust_level: 'low',
   capabilities: ['market_data'],
@@ -88,6 +89,10 @@ function assert(condition: boolean, msg: string) {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 async function run() {
+  process.env.TREASURY_REAL_PROOF_VENDOR_ID = 'provider-a';
+  process.env.TREASURY_REAL_PROOF_RECIPIENT = '0x1111111111111111111111111111111111111111';
+  process.env.TREASURY_WALLET_CHAIN_ID = '56';
+  process.env.TREASURY_PAYMENT_TOKEN = BSC_USDT_ROUTE.token_address;
   console.log('\n=== Gate 4.5 Payment Hardening Tests ===\n');
 
   // ─── Provider parity ──────────────────────────────────────────────────────
@@ -316,27 +321,43 @@ async function run() {
   // ─── Token / Contract correctness ─────────────────────────────────────────────
   console.log('\n--- Token / Contract Correctness ---');
 
-  await test('USDC symbol maps to correct BSC USDC contract address', async () => {
-    // BSC USDC: 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d
-    const usdcContract = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+  await test('USDT symbol maps to official BSC USDT contract address', async () => {
     const cfg = getBinanceConfig();
-    assert(cfg.paymentToken.toLowerCase() === usdcContract.toLowerCase(), `expected USDC contract, got ${cfg.paymentToken}`);
+    assert(cfg.paymentToken.toLowerCase() === BSC_USDT_ROUTE.token_address.toLowerCase(), `expected USDT contract, got ${cfg.paymentToken}`);
+    assert(cfg.paymentTokenSymbol === 'USDT', `expected USDT symbol, got ${cfg.paymentTokenSymbol}`);
   });
 
-  await test('USDT contract cannot be labeled as USDC', async () => {
-    // USDT contract on BSC: 0x55d398326f99059fF775485246999027B3197955
-    // This should NOT match USDC validation
-    const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+  await test('BSC USDC contract is rejected by the BSC-USDT route', async () => {
     const USDC_CONTRACT = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
-    assert(usdtContract.toLowerCase() !== USDC_CONTRACT.toLowerCase(), 'USDT contract must differ from USDC');
-    // BinancePaymentProvider would reject this as non-USDC token
     process.env.TREASURY_PAYMENT_MODE = 'binance';
-    process.env.TREASURY_PAYMENT_TOKEN = usdtContract;
-    const result = await binancePaymentProvider.execute(makeRequest('usdt-rejected'), mockProviderOffer, ApprovalType.AUTO);
-    assert(result.success === false, 'USDT contract should be rejected for USDC mode');
+    process.env.TREASURY_PAYMENT_TOKEN = USDC_CONTRACT;
+    const result = await binancePaymentProvider.execute(makeRequest('usdc-rejected'), mockProviderOffer, ApprovalType.AUTO);
+    assert(result.success === false, 'USDC contract should be rejected for BSC-USDT mode');
     assert(result.message.includes('Unsupported token'), `expected Unsupported token: ${result.message}`);
-    process.env.TREASURY_PAYMENT_TOKEN = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+    process.env.TREASURY_PAYMENT_TOKEN = BSC_USDT_ROUTE.token_address;
     process.env.TREASURY_PAYMENT_MODE = 'mock';
+  });
+
+  await test('route resolver returns one verified BSC-USDT route', async () => {
+    const result = resolvePaymentRoute({
+      provider: mockProviderOffer,
+      configuredChainId: '56',
+      configuredToken: BSC_USDT_ROUTE.token_address,
+    });
+    assert(result.ok, result.ok ? '' : result.reason);
+    if (result.ok) {
+      assert(result.route.chain_id === '56', 'chain must be BSC mainnet');
+      assert(result.route.token_symbol === 'USDT', 'token must be USDT');
+    }
+  });
+
+  await test('route fingerprint changes when route-critical data changes', async () => {
+    const resolved = resolvePaymentRoute({ provider: mockProviderOffer, configuredChainId: '56', configuredToken: BSC_USDT_ROUTE.token_address });
+    assert(resolved.ok, 'route should resolve');
+    if (!resolved.ok) return;
+    const first = routeFingerprint('purchase-1', resolved.route, 0.09);
+    const changedAmount = routeFingerprint('purchase-1', resolved.route, 0.10);
+    assert(first !== changedAmount, 'amount must be part of idempotency fingerprint');
   });
 
   // ─── Real proof recipient ─────────────────────────────────────────────────
@@ -359,6 +380,7 @@ async function run() {
   await test('missing real proof recipient → NOT_CONFIGURED state', async () => {
     // When TREASURY_REAL_PROOF_RECIPIENT is not set, real proof cannot execute
     // This is the expected state before user configures it
+    const savedRecipient = process.env.TREASURY_REAL_PROOF_RECIPIENT;
     delete process.env.TREASURY_REAL_PROOF_RECIPIENT;
     const recipient = process.env.TREASURY_REAL_PROOF_RECIPIENT;
     assert(recipient === undefined, 'TREASURY_REAL_PROOF_RECIPIENT should be unset');
@@ -370,6 +392,7 @@ async function run() {
       status: 'NOT_CONFIGURED',
     };
     assert(evidence.status === 'NOT_CONFIGURED', 'real proof status should be NOT_CONFIGURED');
+    process.env.TREASURY_REAL_PROOF_RECIPIENT = savedRecipient;
   });
 
   await test('invalid recipient format rejected', async () => {
