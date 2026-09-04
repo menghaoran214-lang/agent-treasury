@@ -1,83 +1,71 @@
 # Project Status
 
-## Current Stage: Gate 5 — Champion Judge Demo ✅ COMPLETE
+Last verified: 2026-09-04
 
-### Gate Status
-| Gate | 内容 | 状态 |
-|------|------|------|
-| 1 | MVP Vertical Slice | ✅ Done |
-| 2 | MCP Server + SQLite Persistence | ✅ Done |
-| 3 | Treasury Skill | ✅ Done |
-| 4 | Binance x402 / Agentic Wallet | ✅ Done |
-| 4.5 | Real Payment Proof & Demo Hardening | ✅ Done |
-| 5 | Champion Judge Demo (Autonomous Fallback) | ✅ Done |
+## Current Stage
 
-## Test Infrastructure
+**Gate 6B — UI V2 complete locally; productization and real-wallet connection are next.**
 
-- **Dynamic ports**: Gate5 uses `net.createServer().listen(0)` — each run gets a random free port. No port conflicts.
-- **RUN_ID**: Each Gate5 run generates `g5-<timestamp>-<random>` and passes via `TREASURY_RUN_ID` env var. Health endpoint returns `run_id`. Mismatched run_id → `STALE_SERVER_DETECTED`.
-- **Unique DB per run**: `treasury-g5-<runId>.db` and `treasury-e2e-<timestamp>.db`. No state sharing between runs.
-- **Direct node launch**: Both MCP and Gate5 use `node --import tsx` (no npx wrapper) so `proc.kill()` kills the actual server process.
-- **Two-phase cleanup**: SIGTERM → wait → `process.kill(pid, 0)` leak check → SIGKILL if needed. MCP E2E prints "MCP server exited cleanly" or `[FAIL] MCP_SERVER_LEAK`.
-- **No manual cleanup**: `npm run test:all` requires no fuser/pkill/manual intervention between runs.
+Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP interface, SQLite persistence, an Agent Skill, a hardened Binance payment adapter, and a bilingual Binance-style operations UI. It is not yet a one-click installable product, and the current machine is not connected to a real Binance Agentic Wallet.
 
-## Gate 5 Summary
+## Gate Status
 
-**Autonomous Fallback Demo**:
-- Stage 1: `runTreasury([alpha, signalx, datapro, premium])` → Premium ($6.00) BLOCKED (single_transaction_limit=1.00)
-- Stage 2: `runTreasury([signalx, datapro, alpha])` → SignalX ($0.80) selected → AUTO → COMPLETED
-- Ledger: $0.80, Receipt: COMPLETED, Resource: Unlocked
+| Gate | Deliverable | Status |
+|---|---|---|
+| 1 | MVP vertical slice | Done |
+| 2 | MCP Server + SQLite persistence | Done |
+| 3 | Treasury Skill | Done |
+| 4 | Binance payment-provider adapter | Code complete |
+| 4.5 | Payment state machine and idempotency hardening | Done |
+| 5 | Autonomous fallback judge demo | Done |
+| 6A | Initial React demo UI and screenshot suite | Done |
+| 6B | Binance-style UI V2, operational pages, popups, responsive layout, full zh/en switching | Complete locally |
+| 7 | Real BAW wallet connection and controlled on-chain proof | Not complete |
+| 8 | One-service runtime and one-click installer | Not started |
+| 9 | Signed release, upgrades, diagnostics, rollback | Not started |
 
-**5 Root Causes Fixed**:
-1. Stale tsx V8 cache → fixed by fresh server per test
-2. `max_budget: 3.00` vs `single_transaction_limit: 1.00` mismatch → aligned to 1.00
-3. `policyEngine` using `request.max_budget` instead of `selectedOffer.price` → uses actual price
-4. `securityGate` unknown `vendor-signalx` → added GATE5_VENDORS to `known_ids`
-5. `treasury.ts` `MODERATE_OVERPRICE` unconditionally overrode `auto_approved=true` → removed from chain
+## What Is Real Today
 
-## Frozen Gate 5 Demo Values
+- Treasury selection, value scoring, fair-price, security, policy, approval, receipt, and ledger logic.
+- Eight MCP tools over stdio.
+- SQLite persistence for purchases, receipts, ledger entries, policy, and payment state.
+- Treasury Skill instructions for agent behavior.
+- Mock payment end-to-end demo.
+- Binance provider integration through the official `baw wallet send` command, including input validation, idempotency, and UNKNOWN-state handling.
+- UI V2 routes: live workspace, pending approvals, ledger, receipts, vendors, analytics, and settings.
+- Immediate Simplified Chinese / English switching across all functional UI copy.
 
-| Item | Value |
-|------|-------|
-| demoPolicy auto_pay_limit | 1.00 USDC |
-| demoPolicy single_transaction_limit | 1.00 USDC |
-| demoPolicy strategy | PERFORMANCE |
-| Purchase Request max_budget | 1.00 USDC |
-| vendor-premium | $6.00, quality 99 → BLOCKED |
-| vendor-signalx | $0.80, quality 94 → AUTO COMPLETED |
-| vendor-datapro | $1.20, quality 88 |
-| vendor-alpha | $0.30, quality 72 |
+## What Is Not Yet Production-Ready
 
-## Test Fixtures (Isolated)
+- `baw` is not installed or connected on the current Windows/WSL environment.
+- Real vendor wallet addresses are not configured; the adapter still contains demo placeholders.
+- No real on-chain payment proof has been performed from this environment.
+- The UI is currently served by a development server, not a packaged background service.
+- No one-click AI host detection, MCP registration, Skill installation, start-on-boot, repair, update, or uninstall flow exists.
+- No signed installer or clean-machine acceptance test exists.
 
-| Fixture | Purpose | Location |
-|---------|---------|----------|
-| GATE5_VENDORS | Production Gate 5 demo + MCP production | `src/providers/mockProviders.ts` |
-| STRATEGY_PROVIDERS | Unit test strategy calibration | `tests/fixtures/strategyProviders.ts` |
-| INTEGRATION_VENDORS | Strategy integration tests | `tests/fixtures/integrationVendors.ts` |
-| MCP_TEST_VENDORS | MCP E2E test fixtures | `tests/fixtures/mcpTestVendors.ts` |
-
-**Test Mode**: `TREASURY_TEST_MODE=1` — only for E2E tests, production always off.
-
-## Test Commands
+## Verification Commands
 
 ```bash
-npm run typecheck      # TypeScript exit 0
-npm run test           # Unit 16/16
-npm run test:integration  # Strategy integration 3/3
-npm run test:mcp       # MCP E2E 11/11
-npm run test:gate5     # Gate 5 demo 13/13
-npm run test:all       # All of the above in sequence
+npm install
+npm run test:all
+npm run ui:build
 ```
 
-## Technology
+The UI also requires a browser smoke test covering both languages and the automatic, approval, and exception paths.
 
-TypeScript 5.5.4, Node.js 22, ES2022 modules (ESM), `@modelcontextprotocol/sdk` 1.30.0, `better-sqlite3`, tsx, Jest 30.5.1/ts-jest. `moduleResolution: bundler`.
+## Next Delivery Order
+
+1. Freeze and publish Gate 6B UI V2 with synchronized documentation.
+2. Install and connect the official Binance Agentic Wallet CLI with user-controlled QR authorization.
+3. Replace demo recipient addresses with an approved vendor registry and run a minimal, explicitly confirmed on-chain proof.
+4. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+5. Build an installer that detects supported AI hosts, registers MCP, installs the Skill, opens onboarding, and verifies the connection.
+6. Add signed releases, upgrades, diagnostics, backup, rollback, repair, and uninstall.
 
 ## Known Technical Debt
 
-1. `@ts-ignore` in `sqliteStorage.ts` — `@types/better-sqlite3` uses `export =` (CJS) + `moduleResolution: bundler` → known limitation, runtime verified
-2. Jest `--forceExit` — ts-jest ESM + better-sqlite3 not explicitly closed
-3. `@types/node` TS2416 errors in node_modules with `skipLibCheck: true` — Node 22 / TS 5.5.4 compatibility, only affects dev tooling, not runtime
-4. `TREASURY_TEST_MODE` is a bootstrap flag in `src/mcp/server.ts` — acceptable for hackathon; proper DI refactor deferred to post-hackathon
-5. `src/` imports test fixtures inline (MCP server test-mode vendors) — acceptable as test-only shortcut; proper resolver pattern deferred to post-hackathon
+1. Root Jest uses `--forceExit`; database lifecycle should eventually be closed explicitly.
+2. `TREASURY_TEST_MODE` and inline test vendor resolution should move to dependency injection after the hackathon.
+3. The checked-in acceptance screenshots represent the earlier Gate 6A UI and must be regenerated for the final Gate 6B visual baseline.
+4. The demo UI and MCP server are separate development processes; packaging requires a unified service boundary.

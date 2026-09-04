@@ -172,12 +172,12 @@ When user says things like:
 - "raise auto-pay limit to 2 USDC"
 - "only allow market_data purchases"
 
-**Do NOT update the policy directly.** Call `propose_policy_change` with the proposed values. Treasury will record the proposal. Future Gate 5 will add a human confirmation UI.
+**Do NOT update the policy directly.** Call `propose_policy_change` with the proposed values. Treasury records the proposal, and a supporting host UI must ask the human to confirm it before the changed policy is trusted.
 
 ```json
 // User: "change strategy to Performance"
 → Call propose_policy_change { "strategy": "PERFORMANCE" }
-→ Tell user the change has been applied (MVP behavior)
+→ Tell the user the proposal was recorded and follow the host UI confirmation flow when available.
 ```
 
 ## Ledger & Receipt Queries
@@ -201,14 +201,15 @@ Call `get_ledger` or `get_receipt`. Do NOT guess from chat history.
 8. **Never fake a payment** — if payment fails, report FAILED to user; do not create fake receipts
 9. **Never call Binance directly** — all payments route through Treasury's payment provider abstraction
 
-## UI Events (Future Gate 5 — Design Space)
+## UI Events
 
 Treasury responses carry implicit UI triggers:
 
-| Status | Future UI |
+| Status | UI behavior |
 |--------|-----------|
-| `HUMAN_APPROVAL_REQUIRED` | Approval UI with Accept/Reject |
-| `propose_policy_change` | Policy diff UI with Confirm/Cancel |
-| `get_ledger` | Ledger/Receipt cards with "why selected" |
+| `HUMAN_APPROVAL_REQUIRED` | Open the approval card with Approve/Reject |
+| `BLOCKED` or `FAILED` | Open the exception card and show the reason |
+| `COMPLETED` | Show a success notification according to notification mode |
+| `get_ledger` | Open the ledger or receipt detail view |
 
-These are not yet implemented. Current skill handles the conversational flow only.
+The Gate 6B demo UI implements these presentation states. Agent behavior must still remain correct when the UI is unavailable.

@@ -1,59 +1,79 @@
 # Tasks — Agent Treasury
 
-## Stage Gate Checklist
+Last synchronized: 2026-09-04
 
-### Gate 1 ✅ MVP Vertical Slice
-- [x] PurchaseRequest data structure
-- [x] 3 mock providers (Provider A/B/C)
-- [x] Strategy-based value scoring
-- [x] Fair price check
-- [x] Security gate
-- [x] Policy engine
-- [x] Mock payment adapter
-- [x] Receipt generation
-- [x] In-memory ledger
-- [x] End-to-end test
-- [x] TypeScript compilation clean
-- [x] First Git commit
+## Completed
 
-### Gate 2 ✅ MCP Server + SQLite Persistence
-- [x] MCP server with all 8 tools on StdioServerTransport
-- [x] Connect runTreasury via MCP tool calls
-- [x] External agent can call request_purchase()
-- [x] SQLite persistence (purchases, policies, receipts, ledger_entries)
-- [x] Receipt schema: formal MCP DTO via receiptToMcpResult()
-- [x] 11/11 MCP E2E scenes pass
-- [x] 16/16 Jest unit tests pass
-- [x] 3/3 SQLite integration tests pass
-- [x] TREASURY_DB_PATH env var for explicit DB path
-- [x] TypeScript 0 errors
-- [x] Documentation synced
+### Gate 1 — MVP Vertical Slice
 
-### Gate 3 🔲 Treasury Skill
-- [ ] Write Treasury Skill markdown
-- [ ] Document when/how agents should call Treasury
-- [ ] Test with a sample agent
+- [x] Purchase request domain model
+- [x] Strategy-based vendor scoring
+- [x] Fair-price and security gates
+- [x] Policy engine and approval outcomes
+- [x] Mock payment, receipt, and ledger
+- [x] Unit coverage and TypeScript build
 
-### Gate 4 🔲 Binance x402
-- [ ] Study Binance x402 docs (network accessible)
-- [ ] Replace mockPayment with real x402 adapter
-- [ ] Test with sandbox credentials
+### Gate 2 — MCP + SQLite
 
-### Gate 5 🔲 Event-driven UI
-- [ ] Setup UI
-- [ ] Approval UI
-- [ ] Policy UI
-- [ ] Ledger UI
+- [x] Eight MCP tools over stdio
+- [x] External request, approval, receipt, and ledger flows
+- [x] SQLite persistence and explicit database path
+- [x] Formal MCP DTOs
+- [x] MCP and SQLite integration suites
 
-### Gate 6 🔲 Demo Flow
-- [ ] Scene 1: Setup
-- [ ] Scene 2: Auto-approved trade agent request
-- [ ] Scene 3: Human approval required
-- [ ] Scene 4: Purchase blocked (cheap + high risk)
-- [ ] Scene 5: Ledger review
+### Gate 3 — Treasury Skill
 
-### Gate 7 🔲 Hackathon Submission
-- [ ] README.md
-- [ ] Demo video script
-- [ ] Final GitHub polish
-- [ ] LICENSE
+- [x] Skill package and reference material
+- [x] Purchase, approval, blocked, and failure SOPs
+- [x] Rules preventing direct wallet bypass
+
+### Gates 4–5 — Binance Adapter and Judge Demo
+
+- [x] PaymentProvider abstraction
+- [x] `baw wallet send` integration path
+- [x] Input validation and fixed BSC/USDC scope
+- [x] Persistent idempotency and payment-state machine
+- [x] Autonomous fallback demo and stable process cleanup
+- [x] Mock end-to-end proof
+
+### Gate 6 — UI
+
+- [x] Setup and policy configuration
+- [x] Live decision workspace
+- [x] Approval and exception popups
+- [x] Ledger and receipt detail
+- [x] Vendor registry
+- [x] Pending approvals and analytics pages
+- [x] Responsive Binance-style UI V2
+- [x] Complete Simplified Chinese / English switching
+
+## Next
+
+### Gate 7 — Real Wallet Proof
+
+- [ ] Install official Binance Agentic Wallet CLI in the formal runtime environment
+- [ ] User-controlled QR sign-in and connection verification
+- [ ] Approved vendor address registry; remove demo recipient placeholders
+- [ ] Wallet status and balance preflight
+- [ ] Explicitly confirmed minimal real transaction
+- [ ] Match chain transaction hash, Treasury receipt, and ledger record
+- [ ] Verify failure, timeout, and UNKNOWN-state recovery without duplicate payment
+
+### Gate 8 — One-Click Productization
+
+- [ ] One background service for MCP, UI, SQLite, policy, and wallet health
+- [ ] Windows installer and clean uninstall
+- [ ] Detect supported AI hosts
+- [ ] Automatically register MCP and install the Treasury Skill
+- [ ] First-run policy and wallet onboarding
+- [ ] Start-on-boot, repair, diagnostics, and backup
+- [ ] Clean-machine installation acceptance test
+
+### Gate 9 — Release
+
+- [ ] Regenerate final Gate 6B screenshots
+- [ ] Demo video and submission package
+- [ ] Signed release artifact
+- [ ] Versioned database migrations
+- [ ] Automatic updates and rollback
+- [ ] Security and privacy documentation

@@ -29,6 +29,7 @@ export default function DecisionPage({ notificationMode, onShowToast, onApproval
   const [demoState, setDemoState] = useState<DemoState | null>(null);
   const [policy, setPolicy] = useState<any>(null);
   const [running, setRunning] = useState(false);
+  const [scenario, setScenario] = useState<'auto' | 'approval' | 'exception'>('auto');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -54,42 +55,52 @@ export default function DecisionPage({ notificationMode, onShowToast, onApproval
   };
 
   const handleDemoComplete = (state: DemoState) => {
-    const result = state.treasuryResult;
+    const result = state.treasuryResult as any;
     if (!result) return;
+    const status = String(result.status ?? result.receipt?.status ?? '').toUpperCase();
+    const selected = result.selection?.selected;
 
-    if (result.status === 'COMPLETED') {
+    if (status === 'COMPLETED') {
       if (notificationMode !== 'silent') {
-        const vendor = result.selection?.selected?.vendor_name ?? '—';
-        const amount = result.selection?.selected?.price ?? 0;
+        const vendor = selected?.vendor_name ?? selected?.provider_name ?? result.receipt?.vendor?.name ?? '—';
+        const amount = selected?.price ?? result.receipt?.amount ?? 0;
         if (notificationMode === 'detailed') {
           onShowToast({ title: t('toast.purchaseCompleted'), body: `${vendor}\n${amount} USDC\n${t('toast.autoApproved')} · ${t('toast.riskLow')}`, status: 'success', exitAt: Date.now() + 5000 });
         } else {
           onShowToast({ title: t('toast.purchaseCompleted'), body: `${vendor} · ${amount} USDC`, status: 'success', exitAt: Date.now() + 3000 });
         }
       }
-    } else if (result.status === 'HUMAN_APPROVAL_REQUIRED') {
-      const sel = result.selection?.selected;
+    } else if (status === 'HUMAN_APPROVAL_REQUIRED') {
+      const sel = selected;
       if (policy) {
         onApprovalRequired({
-          request_id: result.request_id,
+          request_id: result.request_id ?? result.receipt?.purchase_id ?? state.id,
           amount: sel?.price ?? 0,
-          vendor_name: sel?.vendor_name ?? '—',
+          vendor_name: sel?.vendor_name ?? sel?.provider_name ?? result.receipt?.vendor?.name ?? '—',
           requester: 'agent',
           purpose: 'Demo purchase',
           risk: 'low',
           auto_pay_limit: policy.auto_pay_limit,
         });
       }
-    } else if (result.status === 'BLOCKED' || result.status === 'FAILED') {
+    } else if (status === 'BLOCKED' || status === 'FAILED') {
       onException({
-        title: result.status === 'BLOCKED' ? t('decision.blocked') : t('ledger.status.FAILED'),
-        description: t('exception.description', { n: String(result.selection?.candidates?.length ?? 0) }),
+        title: status === 'BLOCKED' ? t('decision.blocked') : t('ledger.status.FAILED'),
+        description: t('exception.description', { n: String(result.selection?.candidates?.length ?? result.selection?.all_candidates?.length ?? 0) }),
         reason: result.error ?? 'No viable vendor',
       });
     }
   };
 
   const handleRun = async () => {
+    if (scenario === 'approval') {
+      onApprovalRequired({ request_id: 'demo-preview-approval', amount: 2.6, vendor_name: 'UltraFeed', requester: 'Research Agent', purpose: t('v2.decision.approvalPurpose'), risk: 'low', auto_pay_limit: 1 });
+      return;
+    }
+    if (scenario === 'exception') {
+      onException({ title: t('v2.decision.exceptionTitle'), description: t('v2.decision.exceptionDescription'), reason: t('v2.decision.exceptionReason') });
+      return;
+    }
     setRunning(true);
     try {
       const { run_id } = await demoApi.run() as { run_id: string };
@@ -110,153 +121,111 @@ export default function DecisionPage({ notificationMode, onShowToast, onApproval
   useEffect(() => () => stopPolling(), []);
 
   const result = demoState?.treasuryResult ?? null;
-  const candidates = result?.selection?.candidates ?? [];
-  const selectedVendor = result?.selection?.selected;
+  const runtime = result as any;
+  const selectedVendor = runtime?.selection?.selected;
+  const resultStatus = String(runtime?.status ?? runtime?.receipt?.status ?? '').toUpperCase();
+  const candidates: VendorCandidate[] = (runtime?.selection?.candidates ?? runtime?.selection?.all_candidates ?? []).map((candidate: any) => ({
+    vendor_id: candidate.vendor_id ?? candidate.provider_id,
+    vendor_name: candidate.vendor_name ?? candidate.provider_name,
+    price: candidate.price,
+    quality: candidate.quality ?? candidate.quality_score ?? '—',
+    status: (candidate.vendor_id ?? candidate.provider_id) === (selectedVendor?.vendor_id ?? selectedVendor?.provider_id) ? 'selected' : 'rejected',
+  }));
+  // The live runtime returns its canonical receipt object; older demo payloads
+  // exposed request_id at the top level. Keep the presentation layer tolerant
+  // of both without changing the Treasury DTO.
+  const requestId = String(runtime?.request_id ?? runtime?.receipt?.purchase_id ?? demoState?.id ?? '—');
+  const selectedName = selectedVendor?.vendor_name ?? selectedVendor?.provider_name ?? runtime?.receipt?.vendor?.name ?? '—';
+  const selectedPrice = selectedVendor?.price ?? runtime?.receipt?.amount ?? 0;
+  const displayCandidates: VendorCandidate[] = candidates.length > 0 ? candidates : [
+    { vendor_id: 'preview-signalx', vendor_name: 'SignalX', price: 0.8, quality: 96, status: 'selected', reason: t('v2.decision.previewSelectedReason') },
+    { vendor_id: 'preview-alpha', vendor_name: 'AlphaData', price: 0.3, quality: 88, status: 'rejected', reason: t('v2.decision.previewAlternateReason') },
+    { vendor_id: 'preview-premium', vendor_name: 'PremiumData', price: 6, quality: 99, status: 'blocked', reason: t('v2.decision.previewBlockedReason') },
+  ];
   const currentStep = demoState
     ? Math.min(STEPS.indexOf(demoState.phase === 'completed' ? 'receipt' : demoState.phase) ?? 6, 6)
     : -1;
 
   return (
-    <div>
-      <div className="flex-between" style={{ marginBottom: 24 }}>
-        <h1 className="page-title" style={{ margin: 0 }}>{t('decision.title')}</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={handleReset} disabled={running}>{t('decision.resetDemo')}</button>
-          <button className="btn btn-primary btn-sm" onClick={handleRun} disabled={running}>
-            {running ? <><span className="spinner" />{t('demo.running')}</> : t('decision.runDemo')}
+    <div className="decision-workspace">
+      <div className="workspace-heading">
+        <div>
+          <div className="eyebrow"><span className="live-dot" /> {t('v2.decision.live')}</div>
+          <h1>{t('v2.decision.title')}</h1>
+          <p>{t('v2.decision.subtitle')}</p>
+        </div>
+        <div className="workspace-actions">
+          <label className="scenario-control"><span>{t('v2.decision.scenario')}</span><select aria-label={t('v2.decision.scenario')} value={scenario} onChange={e => setScenario(e.target.value as typeof scenario)}><option value="auto">{t('v2.decision.scenarioAuto')}</option><option value="approval">{t('v2.decision.scenarioApproval')}</option><option value="exception">{t('v2.decision.scenarioException')}</option></select></label>
+          <button className="btn btn-ghost" onClick={handleReset} disabled={running}>{t('v2.decision.reset')}</button>
+          <button className="btn btn-primary run-button" onClick={handleRun} disabled={running}>
+            {running ? <><span className="spinner" /> {t('v2.decision.running')}</> : `▶ ${t('v2.decision.run')}`}
           </button>
         </div>
       </div>
 
-      {/* Stepper */}
-      <div className="stepper" style={{ marginBottom: 28 }}>
+      <section className="request-strip">
+        <div className="request-main">
+          <div className="request-icon">▱</div>
+          <div>
+            <span className="section-kicker">{t('v2.decision.requestType')}</span>
+            <h2>{t('v2.decision.requestTitle')}</h2>
+            <p>{t('v2.decision.requestDesc')}</p>
+          </div>
+        </div>
+        <div className="request-metric"><span>{t('v2.decision.budgetLimit')}</span><strong>1.00</strong><small>USDC</small></div>
+        <div className="request-metric"><span>{t('v2.decision.importance')}</span><strong className="text-yellow">{t('v2.decision.high')}</strong><small>{t('v2.decision.realtimeTask')}</small></div>
+        <div className="request-metric"><span>{t('v2.decision.autoPayLimit')}</span><strong>≤ 1.00</strong><small>USDC</small></div>
+        <div className="request-metric"><span>{t('v2.decision.transactionLimit')}</span><strong>≤ 5.00</strong><small>USDC</small></div>
+      </section>
+
+      <div className="section-heading">
+        <div><h2>{t('v2.decision.comparison')}</h2><span>{t('v2.decision.comparisonHint')}</span></div>
+        <span className="request-id">ID · {requestId.slice(0, 16)}</span>
+      </div>
+
+      <section className="vendor-grid">
+        {displayCandidates.slice(0, 3).map((candidate, index) => (
+          <article key={candidate.vendor_id} className={`quote-card ${vendorCardClass(candidate)}`}>
+            {candidate.status === 'selected' && <span className="recommend-ribbon">{t('v2.decision.recommended')}</span>}
+            <div className="quote-header">
+              <span className={`vendor-avatar avatar-${index}`}>{candidate.vendor_name.slice(0, 1)}</span>
+              <div><h3>{candidate.vendor_name}</h3><p>{t('v2.decision.vendorDesc')}</p></div>
+              <span className="verified-tag">{t('v2.decision.verified')}</span>
+            </div>
+            <div className="quote-price"><span>{t('v2.decision.unitPrice')}</span><strong>{candidate.price.toFixed(2)} <small>USDC</small></strong></div>
+            <dl className="quote-details">
+              <div><dt>{t('v2.decision.quality')}</dt><dd>{candidate.quality} / 100</dd></div>
+              <div><dt>{t('v2.decision.response')}</dt><dd>{t('v2.decision.seconds',{n:index === 0 ? 1.4 : index === 1 ? 1.8 : 1.2})}</dd></div>
+              <div><dt>{t('v2.decision.risk')}</dt><dd className={candidate.status === 'blocked' ? 'text-red' : 'text-green'}>{candidate.status === 'blocked' ? t('v2.decision.overLimit') : t('v2.decision.lowRisk')}</dd></div>
+            </dl>
+            <div className={`policy-note ${candidate.status === 'blocked' ? 'danger' : ''}`}>{candidate.reason ?? t('v2.decision.policyPass')}</div>
+            <button className={`quote-action ${candidate.status}`}>{candidate.status === 'selected' ? `✓ ${t('v2.decision.selected')}` : candidate.status === 'blocked' ? t('v2.decision.unavailable') : t('v2.decision.select')}</button>
+          </article>
+        ))}
+      </section>
+
+      <section className={`decision-result ${resultStatus === 'BLOCKED' ? 'blocked' : ''}`}>
+        <div className="result-badge">{resultStatus === 'BLOCKED' ? '!' : '✓'}</div>
+        <div className="result-copy"><span>{t('v2.decision.result')}</span><h2>{running ? t('v2.decision.evaluating') : result ? (resultStatus === 'BLOCKED' ? t('v2.decision.systemBlocked') : t('v2.decision.autoApproved')) : t('v2.decision.waiting')}</h2><p>{result ? t('v2.decision.resultDesc',{vendor:selectedName}) : t('v2.decision.waitingDesc')}</p></div>
+        <div className="result-metric"><span>{t('v2.decision.actualPrice')}</span><strong>{result ? selectedPrice.toFixed(2) : '—'} <small>USDC</small></strong></div>
+        <div className="result-metric"><span>{t('v2.decision.approvalType')}</span><strong>{result ? t('v2.decision.autoApproval') : '—'}</strong></div>
+        <div className="result-metric saved"><span>{t('v2.decision.saved')}</span><strong>{result ? Math.max(0, 6 - selectedPrice).toFixed(2) : '—'} <small>USDC</small></strong></div>
+      </section>
+
+      <section className="decision-timeline">
         {STEPS.map((step, i) => {
-          const blocked = result?.status === 'BLOCKED';
-          const status = stepStatus(step, currentStep, i, blocked);
-          return (
-            <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
-              <div className={`step ${status}`} style={{ flex: 1 }}>
-                {t(`decision.stepper.${step}`)}
-              </div>
-              {i < STEPS.length - 1 && <div className="step-connector" />}
-            </div>
-          );
+          const status = stepStatus(step, currentStep, i, resultStatus === 'BLOCKED');
+          return <div key={step} className={`timeline-step ${status}`}><i>{status === 'done' ? '✓' : i + 1}</i><span>{t(`decision.stepper.${step}`)}</span></div>;
         })}
-      </div>
+      </section>
 
-      <div className="grid-2" style={{ marginBottom: 24, gap: 16 }}>
-        {/* Request */}
-        <div className="card">
-          <div className="card-title">{t('decision.request.title')}</div>
-          {result ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span className="text-muted">{t('decision.request.id')}</span>
-                <span className="text-mono" style={{ fontSize: 12 }}>{result.request_id.slice(0, 12)}…</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span className="text-muted">{t('decision.request.maxBudget')}</span>
-                <span className="text-mono">1.00 USDC</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span className="text-muted">{t('decision.request.resourceType')}</span>
-                <span className="text-mono">market_data</span>
-              </div>
-            </div>
-          ) : (
-            <div className="empty-state" style={{ padding: '20px 0' }}>
-              <div className="text-muted" style={{ fontSize: 13 }}>{t('decision.noActiveRequest')}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Decision Summary */}
-        <div className="card">
-          <div className="card-title">{t('decisionSummary.title')}</div>
-          {result ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span className="text-muted">{t('decisionSummary.selectedVendor')}</span>
-                <span style={{ fontWeight: 600 }}>{selectedVendor?.vendor_name ?? '—'}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span className="text-muted">{t('decisionSummary.finalCost')}</span>
-                <span className="text-mono">{selectedVendor?.price != null ? `${selectedVendor.price} USDC` : '—'}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span className="text-muted">{t('decisionSummary.decision')}</span>
-                <span className={
-                  result.status === 'COMPLETED' ? 'text-green' :
-                  result.status === 'HUMAN_APPROVAL_REQUIRED' ? 'text-yellow' :
-                  result.status === 'BLOCKED' ? 'text-red' : 'text-muted'
-                }>
-                  {result.status === 'COMPLETED' ? t('decision.completed') :
-                   result.status === 'HUMAN_APPROVAL_REQUIRED' ? t('decision.humanRequired') :
-                   result.status === 'BLOCKED' ? t('decision.blocked') : result.status}
-                </span>
-              </div>
-              {result.error && (
-                <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 4 }}>{result.error}</div>
-              )}
-            </div>
-          ) : (
-            <div className="empty-state" style={{ padding: '20px 0' }}>
-              <div className="text-muted" style={{ fontSize: 13 }}>{t('decision.noActiveRequest')}</div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Vendor Comparison */}
-      <div className="card" style={{ marginBottom: 24 }}>
-        <div className="card-title">{t('decision.vendorComparison')}</div>
-        {candidates.length > 0 ? (
-          <div className="vendor-list">
-            {candidates.map((c: VendorCandidate) => (
-              <div key={c.vendor_id} className={`vendor-card ${vendorCardClass(c)}`}>
-                <div className="vendor-card-header">
-                  <span className="vendor-name">{c.vendor_name}</span>
-                  <span className="vendor-price">${c.price.toFixed(2)}</span>
-                </div>
-                <div className="vendor-stats">
-                  <div className="vendor-stat">
-                    <div className="vendor-stat-val">{c.quality}</div>
-                    <div className="vendor-stat-lbl">Quality</div>
-                  </div>
-                  <div className="vendor-stat">
-                    <div className={`vendor-stat-val ${c.status === 'blocked' ? 'text-red' : c.status === 'selected' ? 'text-green' : ''}`}>
-                      {c.status === 'selected' ? '✓' : c.status === 'blocked' ? '✗' : '—'}
-                    </div>
-                    <div className="vendor-stat-lbl">Status</div>
-                  </div>
-                </div>
-                {c.reason && (
-                  <div className={`vendor-reason ${c.status === 'blocked' ? 'fail' : 'ok'}`}>{c.reason}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <div className="empty-state-text">{t('decision.noActiveRequest')}</div>
-          </div>
-        )}
-      </div>
-
-      {/* Audit Log (detailed only) */}
       {notificationMode === 'detailed' && demoState?.auditLog && demoState.auditLog.length > 0 && (
-        <div className="card">
-          <div className="card-title">Activity</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 240, overflowY: 'auto' }}>
-            {demoState.auditLog.map((entry, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--border-light)', fontSize: 12 }}>
-                <span className="text-mono text-muted" style={{ minWidth: 44 }}>{entry.elapsed_ms}ms</span>
-                <span style={{ fontWeight: 600, minWidth: 70, color: 'var(--muted)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.06em' }}>{entry.phase}</span>
-                <span>{entry.message}</span>
-              </div>
-            ))}
+        <details className="audit-drawer">
+          <summary>{t('v2.decision.audit')} <span>{t('v2.decision.entries',{n:demoState.auditLog.length})}</span></summary>
+          <div className="audit-list">
+            {demoState.auditLog.map((entry, i) => <div key={i}><time>{entry.elapsed_ms}ms</time><b>{entry.phase}</b><span>{entry.message}</span></div>)}
           </div>
-        </div>
+        </details>
       )}
     </div>
   );

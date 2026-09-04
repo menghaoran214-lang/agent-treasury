@@ -4,8 +4,10 @@
  */
 import { spawn } from 'child_process';
 import { createInterface } from 'readline';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
-const DB_PATH = `/tmp/treasury-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.db`;
+const DB_PATH = join(tmpdir(), `treasury-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.db`);
 
 interface JsonRpcRequest { jsonrpc: '2.0'; id: number; method: string; params?: Record<string, unknown>; }
 interface JsonRpcResponse { jsonrpc: '2.0'; id: number; result?: unknown; error?: { code: number; message: string; data?: unknown }; }
@@ -26,7 +28,7 @@ async function connect(): Promise<void> {
   return new Promise((resolve) => {
     // Use node directly (no npx wrapper) so proc.kill() kills actual server process
     proc = spawn(process.execPath, ['--import', 'tsx', 'src/mcp/server.ts'], {
-      cwd: '/mnt/d/MM/开发/项目/agent-treasury',
+      cwd: process.cwd(),
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, TREASURY_DB_PATH: DB_PATH, TREASURY_TEST_MODE: '1' },
     });

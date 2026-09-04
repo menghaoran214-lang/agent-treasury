@@ -66,37 +66,43 @@ export default function LedgerPage({ onViewReceipt }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {entries.map(entry => (
-                  <tr key={entry.receipt_id} style={{ cursor: 'pointer' }} onClick={() => onViewReceipt(entry.receipt_id)}>
-                    <td className="mono" style={{ fontSize: 12 }}>{entry.receipt_id.slice(0, 10)}…</td>
-                    <td>{entry.vendor_name}</td>
-                    <td className="mono">{entry.amount.toFixed(2)} {entry.currency}</td>
+                {entries.map((entry: any) => {
+                  const item = entry.receipt ?? entry;
+                  const receiptId = String(item.id ?? item.receipt_id ?? '—');
+                  const vendorName = item.vendor?.name ?? item.vendor_name ?? '—';
+                  const status = String(item.status ?? 'unknown').toUpperCase();
+                  return (
+                  <tr key={receiptId} style={{ cursor: 'pointer' }} onClick={() => onViewReceipt(receiptId)}>
+                    <td className="mono" style={{ fontSize: 12 }}>{receiptId.slice(0, 10)}…</td>
+                    <td>{vendorName}</td>
+                    <td className="mono">{Number(item.amount ?? 0).toFixed(2)} {item.currency ?? 'USDC'}</td>
                     <td>
-                      <span className={`badge ${entry.approval_type === 'auto' ? 'badge-green' : 'badge-yellow'}`}>
-                        {t(`ledger.approval.${entry.approval_type}`)}
+                      <span className={`badge ${item.approval_type === 'auto' ? 'badge-green' : 'badge-yellow'}`}>
+                        {t(`ledger.approval.${item.approval_type}`)}
                       </span>
                     </td>
                     <td>
-                      <span className={`badge badge-${entry.risk === 'low' ? 'green' : entry.risk === 'high' ? 'red' : 'muted'}`}>
-                        {t(`risk.${entry.risk}`)}
+                      <span className={`badge badge-${item.risk === 'low' ? 'green' : item.risk === 'high' ? 'red' : 'muted'}`}>
+                        {t(`risk.${item.risk}`)}
                       </span>
                     </td>
                     <td>
                       <span className={`badge ${
-                        entry.status === 'COMPLETED' ? 'badge-green' :
-                        entry.status === 'BLOCKED' ? 'badge-red' :
-                        entry.status === 'REJECTED' ? 'badge-red' :
-                        entry.status === 'PENDING_APPROVAL' ? 'badge-yellow' :
+                        status === 'COMPLETED' ? 'badge-green' :
+                        status === 'BLOCKED' ? 'badge-red' :
+                        status === 'REJECTED' ? 'badge-red' :
+                        status === 'PENDING_APPROVAL' ? 'badge-yellow' :
                         'badge-muted'
                       }`}>
-                        {t(`ledger.status.${entry.status}`)}
+                        {t(`ledger.status.${status}`)}
                       </span>
                     </td>
                     <td className="mono text-muted" style={{ fontSize: 12 }}>
-                      {new Date(entry.created_at).toLocaleString(i18n.lang === 'zh-CN' ? 'zh-CN' : 'en-US')}
+                      {new Date(item.created_at).toLocaleString(i18n.lang === 'zh-CN' ? 'zh-CN' : 'en-US')}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}

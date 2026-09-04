@@ -228,6 +228,21 @@
     "medium": "中风险",
     "high": "高风险"
   },
+  "v2": {
+    "nav": { "decision": "实时工作台", "approvals": "待我审批", "ledger": "智能账本", "receipts": "智能收据", "vendors": "供应商库", "reports": "分析报告", "settings": "系统设置" },
+    "sidebar": { "monthlyBudget": "本月预算使用", "autoPayLimit": "自动支付上限", "online": "Treasury 在线" },
+    "decision": {
+      "live": "TREASURY 实时运行", "title": "实时采购决策", "subtitle": "系统根据预算、价格、安全与策略规则自动评估每一笔 Agent 支出。",
+      "scenario": "流程演示", "scenarioAuto": "正常自动完成", "scenarioApproval": "需要人工审批", "scenarioException": "异常阻断", "reset": "重置演示", "running": "正在决策", "run": "运行采购演示",
+      "requestType": "市场数据请求", "requestTitle": "ETH 24 小时市场风险分析", "requestDesc": "Research Agent · 实时情绪、波动率与杠杆风险数据", "budgetLimit": "预算上限", "importance": "数据重要性", "high": "高", "realtimeTask": "实时任务", "autoPayLimit": "自动支付上限", "transactionLimit": "单笔交易上限",
+      "comparison": "供应商报价对比", "comparisonHint": "系统已按当前策略自动评估并排序", "recommended": "推荐", "vendorDesc": "市场数据 · 实时信号", "verified": "Treasury 已验证", "unitPrice": "单价", "quality": "质量评分", "response": "预计响应", "seconds": "{n} 秒", "risk": "风险等级", "overLimit": "超限", "lowRisk": "低风险", "policyPass": "通过预算与策略检查", "selected": "已选择此方案", "unavailable": "不可使用", "select": "选择此方案", "previewSelectedReason": "符合策略，可自动支付", "previewAlternateReason": "价格更低，但稳定性低于推荐方案", "previewBlockedReason": "超出单笔交易上限",
+      "result": "决策结果", "evaluating": "正在评估供应商", "systemBlocked": "系统阻断", "autoApproved": "自动批准", "waiting": "等待演示开始", "resultDesc": "已选择 {vendor}，所有支付仍受策略与预算规则保护。", "waitingDesc": "点击右上角“运行采购演示”查看完整决策过程。", "actualPrice": "实际价格", "approvalType": "审批类型", "autoApproval": "自动审批", "saved": "相对高价方案节省", "audit": "查看完整决策日志", "entries": "{n} 条",
+      "approvalPurpose": "BTC 实时市场深度与风险分析", "exceptionTitle": "暂时无法完成采购", "exceptionDescription": "已检查 3 个候选供应商，当前没有符合预算与安全规则的方案。", "exceptionReason": "最低可用方案 1.40 USDC，超过当前预算上限 1.00 USDC"
+    },
+    "approvals": { "title": "待我审批", "subtitle": "只展示超过自动支付权限、必须由你确认的支出请求。", "pending": "1 笔待处理", "required": "需要你的批准", "lowRisk": "低风险", "amount": "申请金额", "limit": "自动支付上限 1.00 USDC", "open": "打开审批卡", "why": "为什么会来到这里？", "whyDesc": "价格与供应商检查均已通过，但金额超过自动支付上限，因此流程暂停并等待人工确认。" },
+    "receipts": { "title": "智能收据", "subtitle": "每一笔 Agent 支出的金额、供应商、审批依据和结果都可以追溯。", "stored": "已存证 {n}", "empty": "暂无收据，运行一次采购演示后会自动生成。", "id": "收据编号", "vendor": "供应商", "amount": "金额", "approval": "审批方式", "status": "状态", "time": "时间", "auto": "自动审批", "human": "人工审批" },
+    "reports": { "title": "分析报告", "subtitle": "基于智能账本汇总预算消耗、自动化率与异常情况。", "export": "导出当前报告", "spend": "累计支出", "spendHint": "来自真实账本记录", "decisions": "决策笔数", "decisionsHint": "采购与支付记录", "success": "成功率", "successHint": "已完成交易占比", "pending": "待审批", "pendingHint": "需要人工处理", "trend": "预算使用趋势", "trendHint": "当前演示账本的累计支出视图" }
+  },
   "common": {
     "loading": "加载中...",
     "error": "错误",

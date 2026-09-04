@@ -228,6 +228,21 @@
     "medium": "Medium Risk",
     "high": "High Risk"
   },
+  "v2": {
+    "nav": { "decision": "Live Workspace", "approvals": "Pending Approval", "ledger": "Smart Ledger", "receipts": "Smart Receipts", "vendors": "Vendor Registry", "reports": "Analytics", "settings": "System Settings" },
+    "sidebar": { "monthlyBudget": "Monthly Budget Used", "autoPayLimit": "Auto-Pay Limit", "online": "Treasury Online" },
+    "decision": {
+      "live": "TREASURY LIVE", "title": "Live Purchase Decision", "subtitle": "Every Agent expense is evaluated against budget, price, security, and policy rules.",
+      "scenario": "Flow Demo", "scenarioAuto": "Automatic Success", "scenarioApproval": "Human Approval", "scenarioException": "Exception Block", "reset": "Reset Demo", "running": "Evaluating", "run": "Run Purchase Demo",
+      "requestType": "Market Data Request", "requestTitle": "ETH 24-Hour Market Risk Analysis", "requestDesc": "Research Agent · Live sentiment, volatility, and leverage-risk data", "budgetLimit": "Budget Limit", "importance": "Data Importance", "high": "High", "realtimeTask": "Real-Time Task", "autoPayLimit": "Auto-Pay Limit", "transactionLimit": "Transaction Limit",
+      "comparison": "Vendor Quote Comparison", "comparisonHint": "Automatically evaluated and ranked under the current policy", "recommended": "Recommended", "vendorDesc": "Market Data · Live Signals", "verified": "Treasury Verified", "unitPrice": "Unit Price", "quality": "Quality Score", "response": "Est. Response", "seconds": "{n} sec", "risk": "Risk Level", "overLimit": "Over Limit", "lowRisk": "Low Risk", "policyPass": "Passed budget and policy checks", "selected": "Selected", "unavailable": "Unavailable", "select": "Select", "previewSelectedReason": "Policy compliant and eligible for auto-pay", "previewAlternateReason": "Lower price, but less reliable than the recommendation", "previewBlockedReason": "Exceeds the transaction limit",
+      "result": "Decision Result", "evaluating": "Evaluating Vendors", "systemBlocked": "System Blocked", "autoApproved": "Auto Approved", "waiting": "Waiting to Start", "resultDesc": "Selected {vendor}; payment remains protected by policy and budget rules.", "waitingDesc": "Select a flow and run the purchase demo to see the full decision process.", "actualPrice": "Actual Price", "approvalType": "Approval Type", "autoApproval": "Automatic", "saved": "Savings vs. Premium", "audit": "View Full Decision Log", "entries": "{n} entries",
+      "approvalPurpose": "BTC Live Market Depth and Risk Analysis", "exceptionTitle": "Unable to Complete Purchase", "exceptionDescription": "Three candidate vendors were checked; none met the budget and security rules.", "exceptionReason": "The lowest available option is 1.40 USDC, above the current 1.00 USDC budget limit"
+    },
+    "approvals": { "title": "Pending Approval", "subtitle": "Only expenses above the auto-pay authority that require your confirmation appear here.", "pending": "1 Pending", "required": "Your Approval Is Required", "lowRisk": "Low Risk", "amount": "Requested Amount", "limit": "Auto-Pay Limit 1.00 USDC", "open": "Open Approval Card", "why": "Why is this here?", "whyDesc": "Price and vendor checks passed, but the amount exceeds the auto-pay limit, so the flow is paused for human confirmation." },
+    "receipts": { "title": "Smart Receipts", "subtitle": "Trace the amount, vendor, approval basis, and result of every Agent expense.", "stored": "{n} Recorded", "empty": "No receipts yet. Run a purchase demo to generate one.", "id": "Receipt ID", "vendor": "Vendor", "amount": "Amount", "approval": "Approval", "status": "Status", "time": "Time", "auto": "Automatic", "human": "Human" },
+    "reports": { "title": "Analytics", "subtitle": "Budget usage, automation rate, and exceptions summarized from the smart ledger.", "export": "Export Report", "spend": "Total Spend", "spendHint": "From actual ledger records", "decisions": "Decisions", "decisionsHint": "Purchase and payment records", "success": "Success Rate", "successHint": "Share of completed transactions", "pending": "Pending", "pendingHint": "Requires human action", "trend": "Budget Usage Trend", "trendHint": "Cumulative spend from the current demo ledger" }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

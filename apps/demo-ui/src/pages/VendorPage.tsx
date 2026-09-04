@@ -79,12 +79,12 @@ export default function VendorPage() {
                       <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{v.url}</div>
                     </td>
                     <td><span className="badge badge-muted">{v.category}</span></td>
-                    <td><span className="badge badge-blue">{t(SOURCE_LABEL[v.source] ?? v.source)}</span></td>
+                    <td><span className="badge badge-blue">{t(`vendor.${SOURCE_LABEL[v.source] ?? v.source}`)}</span></td>
                     <td><span className={`badge ${
                       v.status === 'verified' || v.status === 'usable' ? 'badge-green' :
                       v.status === 'pending' ? 'badge-yellow' :
                       v.status === 'blocked' || v.status === 'restricted' ? 'badge-red' : 'badge-muted'
-                    }`}>{t(STATUS_LABEL[v.status] ?? v.status)}</span></td>
+                    }`}>{t(`vendor.${STATUS_LABEL[v.status] ?? v.status}`)}</span></td>
                   </tr>
                 ))}
               </tbody>

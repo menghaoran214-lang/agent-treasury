@@ -16,14 +16,15 @@
  */
 
 import { rm, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { tmpdir } from 'os';
 import { setPaymentProvider, mockPaymentProvider } from '../src/adapters/paymentAdapter.js';
 import { binancePaymentProvider, getBinanceConfig } from '../src/adapters/binancePaymentProvider.js';
 import { sqliteStorage } from '../src/storage/sqliteStorage.js';
 import { PurchaseStrategy, ApprovalType } from '../src/domain/types.js';
 import type { PurchaseRequest, ProviderOffer } from '../src/domain/types.js';
 
-const TEST_DB = '/tmp/treasury-g45.db';
+const TEST_DB = join(tmpdir(), 'treasury-g45.db');
 
 async function freshDb() {
   await rm(TEST_DB,           { force: true });
@@ -244,7 +245,7 @@ async function run() {
   console.log('\n--- CLI Injection Audit ---');
 
   await test('baw CLI call uses execFile not exec (source review)', async () => {
-    const src = await import('fs/promises').then(fs => fs.readFile('/mnt/d/MM/开发/项目/agent-treasury/src/adapters/binancePaymentProvider.ts', 'utf8'));
+    const src = await import('fs/promises').then(fs => fs.readFile(resolve('src/adapters/binancePaymentProvider.ts'), 'utf8'));
     // Must use execFile, not exec with string concatenation
     assert(!src.includes('exec(') || src.includes('execFile'), 'Must use execFile for baw calls, not exec() with shell string');
     assert(src.includes('execFile'), 'Should use execFile from child_process');

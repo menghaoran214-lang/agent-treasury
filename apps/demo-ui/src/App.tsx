@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { i18n, t } from './i18n';
+import { i18n } from './i18n';
 import SetupPage from './pages/SetupPage';
 import DecisionPage from './pages/DecisionPage';
 import LedgerPage from './pages/LedgerPage';
 import ReceiptPage from './pages/ReceiptPage';
 import VendorPage from './pages/VendorPage';
 import SettingsPage from './pages/SettingsPage';
+import ApprovalsPage from './pages/ApprovalsPage';
+import ReceiptsPage from './pages/ReceiptsPage';
+import ReportsPage from './pages/ReportsPage';
 import ToastContainer from './components/ToastContainer';
 import ApprovalModal from './components/ApprovalModal';
 import ExceptionModal from './components/ExceptionModal';
 
-export type Page = 'setup' | 'decision' | 'ledger' | 'receipt' | 'vendors' | 'settings';
+export type Page = 'setup' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
 
 interface AppState {
   page: Page;
@@ -53,13 +56,23 @@ interface ExceptionState {
 }
 
 export default function App() {
+  const receiptFromHash = () => {
+    const parts = window.location.hash.replace(/^#\/?/, '').split('/');
+    return parts[0] === 'receipt' && parts[1] ? parts[1] : null;
+  };
+  const pageFromHash = (): Page => {
+    const candidate = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+    return (['setup', 'decision', 'approvals', 'ledger', 'receipts', 'receipt', 'vendors', 'reports', 'settings'] as Page[]).includes(candidate as Page)
+      ? candidate as Page
+      : 'setup';
+  };
   const [state, setState] = useState<AppState>({
-    page: 'setup',
+    page: pageFromHash(),
     notificationMode: 'detailed',
     toasts: [],
     approvalRequest: null,
     exception: null,
-    receiptId: null,
+    receiptId: receiptFromHash(),
     setupDone: localStorage.getItem('treasury-setup-done') === '1',
   });
 
@@ -79,7 +92,16 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  const navigate = (page: Page) => setState(s => ({ ...s, page }));
+  useEffect(() => {
+    const syncPage = () => setState(s => ({ ...s, page: pageFromHash(), receiptId: receiptFromHash() ?? s.receiptId }));
+    window.addEventListener('hashchange', syncPage);
+    return () => window.removeEventListener('hashchange', syncPage);
+  }, []);
+
+  const navigate = (page: Page) => {
+    window.location.hash = page;
+    setState(s => ({ ...s, page }));
+  };
 
   const showToast = (item: Omit<ToastItem, 'id'>) => {
     const id = Math.random().toString(36).slice(2);
@@ -91,19 +113,26 @@ export default function App() {
     setState(s => ({ ...s, toasts: s.toasts.filter(t => t.id !== id) }));
   };
 
-  const openReceipt = (receiptId: string) => setState(s => ({ ...s, receiptId, page: 'receipt' }));
-  const closeReceipt = () => setState(s => ({ ...s, receiptId: null }));
+  const openReceipt = (receiptId: string) => {
+    window.location.hash = `receipt/${receiptId}`;
+    setState(s => ({ ...s, receiptId, page: 'receipt' }));
+  };
+  const closeReceipt = () => navigate('ledger');
 
   const handleSetupDone = (notificationMode: 'detailed' | 'concise' | 'silent') => {
     localStorage.setItem('treasury-setup-done', '1');
+    window.location.hash = 'decision';
     setState(s => ({ ...s, setupDone: true, notificationMode, page: 'decision' }));
   };
 
-  const navItems: { id: Page; labelKey: string }[] = [
-    { id: 'decision', labelKey: 'nav.decision' },
-    { id: 'ledger', labelKey: 'nav.ledger' },
-    { id: 'vendors', labelKey: 'nav.vendors' },
-    { id: 'settings', labelKey: 'nav.setup' },
+  const navItems: { id: Page; labelKey: string; icon: string }[] = [
+    { id: 'decision', labelKey: 'v2.nav.decision', icon: '⚡' },
+    { id: 'approvals', labelKey: 'v2.nav.approvals', icon: '✓' },
+    { id: 'ledger', labelKey: 'v2.nav.ledger', icon: '▤' },
+    { id: 'receipts', labelKey: 'v2.nav.receipts', icon: '▧' },
+    { id: 'vendors', labelKey: 'v2.nav.vendors', icon: '⌘' },
+    { id: 'reports', labelKey: 'v2.nav.reports', icon: '◫' },
+    { id: 'settings', labelKey: 'v2.nav.settings', icon: '⚙' },
   ];
 
   if (!state.setupDone) {
@@ -113,21 +142,41 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="app-logo">Agent Treasury <span>BETA</span></div>
-        <nav className="app-nav">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              className={`nav-btn${state.page === item.id ? ' active' : ''}`}
-              onClick={() => navigate(item.id)}
-            >
-              {t(item.labelKey)}
-            </button>
-          ))}
-        </nav>
+        <div className="app-brand">
+          <div className="binance-mark" aria-hidden="true"><i /><i /><i /><i /></div>
+          <div className="binance-word">BINANCE</div>
+          <div className="brand-divider" />
+          <div className="app-logo">Agent Treasury</div>
+          <span className="beta-tag">BETA</span>
+        </div>
+        <div className="header-actions">
+          <span className="agent-chip"><b>AI</b> AI_Trader⌄</span>
+        </div>
       </header>
+      <div className="app-body">
+        <aside className="sidebar">
+          <nav className="app-nav">
+            {navItems.map(item => (
+              <button
+                key={item.id}
+                className={`nav-btn${state.page === item.id ? ' active' : ''}`}
+                onClick={() => navigate(item.id)}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span>{i18n.t(item.labelKey)}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="sidebar-budget">
+            <span>{i18n.t('v2.sidebar.monthlyBudget')}</span>
+            <strong>8.40 <small>/ 100 USDC</small></strong>
+            <div className="budget-track"><i /></div>
+            <span>{i18n.t('v2.sidebar.autoPayLimit')} <b>1.00 USDC</b></span>
+          </div>
+          <div className="sidebar-footer"><span className="status-dot" /> {i18n.t('v2.sidebar.online')}</div>
+        </aside>
 
-      <main className="app-main">
+        <main className="app-main">
         {state.page === 'decision' && (
           <DecisionPage
             notificationMode={state.notificationMode}
@@ -137,16 +186,20 @@ export default function App() {
           />
         )}
         {state.page === 'ledger' && <LedgerPage onViewReceipt={openReceipt} />}
+        {state.page === 'approvals' && <ApprovalsPage onOpenApproval={(req) => setState(s => ({ ...s, approvalRequest: req }))} />}
+        {state.page === 'receipts' && <ReceiptsPage onViewReceipt={openReceipt} />}
         {state.page === 'receipt' && state.receiptId && (
           <ReceiptPage receiptId={state.receiptId} onBack={closeReceipt} />
         )}
         {state.page === 'vendors' && <VendorPage />}
+        {state.page === 'reports' && <ReportsPage />}
         {state.page === 'settings' && (
           <SettingsPage
             onNotificationModeChange={(mode) => setState(s => ({ ...s, notificationMode: mode }))}
           />
         )}
-      </main>
+        </main>
+      </div>
 
       <ToastContainer toasts={state.toasts} onRemove={removeToast} />
       {state.approvalRequest && (

@@ -7,7 +7,25 @@ export type TranslationKey = string;
 const translations: Record<Lang, typeof zhCN> = { 'zh-CN': zhCN, en };
 
 function getNested(obj: any, path: string): string {
-  return path.split('.').reduce((acc, k) => acc?.[k], obj) ?? path;
+  // The dictionaries contain both nested namespaces and legacy dotted keys
+  // (for example setup -> "section.strategy"). Consume the longest matching
+  // segment at each level so both shapes resolve without duplicating strings.
+  let cursor = obj;
+  let parts = path.split('.');
+  while (parts.length > 0) {
+    let matched = false;
+    for (let end = parts.length; end > 0; end -= 1) {
+      const key = parts.slice(0, end).join('.');
+      if (cursor?.[key] !== undefined) {
+        cursor = cursor[key];
+        parts = parts.slice(end);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) return path;
+  }
+  return typeof cursor === 'string' ? cursor : path;
 }
 
 function detectLang(): Lang {

@@ -1,6 +1,6 @@
 # Agent Treasury
 
-**Pluggable AI Agent Financial & Payment Layer** — for the Binance Agent OS Mini Hackathon, Track A.
+**Pluggable AI Agent Financial & Payment Layer** — a policy, approval, payment, receipt, and ledger layer for AI agents.
 
 > Human defines policy. Agents execute within policy. Humans intervene only on exceptions.
 
@@ -22,6 +22,7 @@ Treasury sits between your agents and the outside world of paid resources (marke
 ```bash
 npm install
 npm run test:all   # TypeScript + unit + integration + MCP + Gate 5 (sequential)
+npm run ui:build   # production build of the Gate 6B UI
 ```
 
 Individual test suites:
@@ -90,17 +91,23 @@ tests/
   integration-sqlite.ts     — SQLite integration (3 strategies)
 ```
 
-## Stage Gates
+## Current Status
 
 | Gate | 内容 | 状态 |
 |------|------|------|
 | 1 | MVP Vertical Slice | ✅ Done |
 | 2 | MCP Server + SQLite Persistence | ✅ Done |
-| 3 | Treasury Skill | 🔲 |
-| 4 | Binance x402 | 🔲 |
-| 5 | Event-driven UI | 🔲 |
-| 6 | Demo Flow | 🔲 |
-| 7 | Submission | 🔲 |
+| 3 | Treasury Skill | ✅ Done |
+| 4 | Binance payment adapter and hardening | ✅ Code complete |
+| 5 | Autonomous judge demo | ✅ Done |
+| 6 | React UI + Binance-style UI V2 | ✅ Complete locally |
+| 7 | Real BAW wallet connection and on-chain proof | 🔲 Not complete |
+| 8 | One-service runtime and one-click installer | 🔲 Not started |
+| 9 | Signed release, upgrades, diagnostics, rollback | 🔲 Not started |
+
+The default payment mode remains `mock`. The Binance adapter must not be treated as production-ready until the official BAW CLI is installed, the user completes QR authorization, real vendor addresses replace the demo placeholders, and a controlled on-chain proof is verified.
+
+See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the current delivery status and next steps.
 
 ## Tech Stack
 

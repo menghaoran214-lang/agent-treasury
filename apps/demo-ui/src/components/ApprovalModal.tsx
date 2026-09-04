@@ -30,6 +30,15 @@ export default function ApprovalModal({
     setPhase('approving');
     setError(null);
     try {
+      if (request.request_id.startsWith('demo-preview-')) {
+        await new Promise(r => setTimeout(r, 500));
+        setPhase('paying');
+        await new Promise(r => setTimeout(r, 700));
+        setPhase('done');
+        await new Promise(r => setTimeout(r, 650));
+        onApproved(undefined);
+        return;
+      }
       const result = await approvalApi.approve(request.request_id);
       setPhase('paying');
       // Wait a moment for payment simulation
@@ -50,6 +59,7 @@ export default function ApprovalModal({
 
   const handleReject = async () => {
     try {
+      if (request.request_id.startsWith('demo-preview-')) { onClose(); return; }
       await approvalApi.reject(request.request_id);
       onClose();
     } catch (e: any) {

@@ -6,6 +6,8 @@
 
 import { spawn } from 'child_process';
 import { createServer } from 'net';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 function getFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -91,11 +93,11 @@ async function run() {
 
   const port = await getFreePort();
   const runId = `g5-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-  const dbPath = `/tmp/treasury-g5-${runId}.db`;
+  const dbPath = join(tmpdir(), `treasury-g5-${runId}.db`);
 
   const server = spawn('node', ['--import', 'tsx', 'src/server/demoServer.ts'], {
     env: { ...process.env, TREASURY_DB_PATH: dbPath, TREASURY_PAYMENT_MODE: 'mock', TREASURY_RUN_ID: runId, DEMO_PORT: String(port) },
-    cwd: '/mnt/d/MM/开发/项目/agent-treasury',
+    cwd: process.cwd(),
     stdio: ['ignore', 'inherit', 'inherit'],
   });
 
