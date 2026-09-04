@@ -20,7 +20,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 | 5 | Autonomous fallback judge demo | Done |
 | 6A | Initial React demo UI and screenshot suite | Done |
 | 6B | Binance-style UI V2, operational pages, popups, responsive layout, full zh/en switching | Complete locally |
-| 7 | Real BAW wallet connection and controlled on-chain proof | Not complete |
+| 7 | Real BAW wallet connection and controlled on-chain proof | Wallet connected; funding and proof pending |
 | 8 | One-service runtime and one-click installer | Not started |
 | 9 | Signed release, upgrades, diagnostics, rollback | Not started |
 
@@ -37,7 +37,8 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 
 ## What Is Not Yet Production-Ready
 
-- Official `baw` CLI v1.0.7 is installed at `/home/meng2062/.local/bin/baw`; wallet status is `UNCONNECTED` pending user QR authorization.
+- Official `baw` CLI v1.0.7 is installed at `/home/meng2062/.local/bin/baw`; user QR authorization succeeded and wallet status is `CONNECTED`.
+- BSC is supported and the wallet address is available locally. The BSC balance query currently returns no non-zero assets, so real payment is not ready.
 - Real vendor wallet addresses are not configured; the adapter still contains demo placeholders.
 - No real on-chain payment proof has been performed from this environment.
 - The UI is currently served by a development server, not a packaged background service.

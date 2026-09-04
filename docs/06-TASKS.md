@@ -51,10 +51,10 @@ Last synchronized: 2026-09-04
 
 ### Gate 7 — Real Wallet Proof
 
-- [ ] Install official Binance Agentic Wallet CLI in the formal runtime environment
-- [ ] User-controlled QR sign-in and connection verification
+- [x] Install official Binance Agentic Wallet CLI in the formal runtime environment
+- [x] User-controlled QR sign-in and connection verification
 - [ ] Approved vendor address registry; remove demo recipient placeholders
-- [ ] Wallet status and balance preflight
+- [x] Wallet status, supported-chain, address, and balance preflight
 - [ ] Explicitly confirmed minimal real transaction
 - [ ] Match chain transaction hash, Treasury receipt, and ledger record
 - [ ] Verify failure, timeout, and UNKNOWN-state recovery without duplicate payment
