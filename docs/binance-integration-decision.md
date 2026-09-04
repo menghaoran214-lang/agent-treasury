@@ -1,8 +1,13 @@
 # Binance Integration Decision
 
-## Integration Path: `baw` CLI via Child Process
+## Integration Path: `baw` CLI via OS-safe Command Bridge
 
 **Chosen path**: `@binance/agentic-wallet` npm package (`baw` CLI) + child process from PaymentAdapter.
+
+The repository normally runs on Windows while the authenticated BAW installation
+lives in Ubuntu WSL. `walletCommandRunner.ts` therefore invokes `wsl.exe` with an
+argument array and `/usr/bin/env`; it never builds a shell string. On WSL/Linux
+the same runner invokes BAW directly.
 
 ### Why This Path
 
@@ -58,6 +63,8 @@ Note: mock providers remain fictional and can never be paid in Binance mode. The
 
 ```
 BAW_CLI_PATH=/home/meng2062/.local/bin/baw # verified local baw 1.9.0
+BAW_EXECUTION_HOST=auto                    # auto | wsl | native
+BAW_WSL_DISTRO=Ubuntu                     # Windows only
 TREASURY_WALLET_CHAIN_ID=56              # BSC mainnet
 TREASURY_PAYMENT_TOKEN=0x55d398326f99059fF775485246999027B3197955  # USDT on BSC
 TREASURY_REAL_PROOF_VENDOR_ID=real-proof-vendor
@@ -74,3 +81,8 @@ TREASURY_PAYMENT_MODE=binance|mock       # explicit provider selection
 - Policy allowlist contains only BSC/USDT for the first proof
 - Bridge and swap are disabled; the agent cannot silently change chain or token
 - Idempotency records `purchase_id + chain + token contract + recipient + amount`
+- A CLI timeout, bridge interruption, malformed response, or missing tx hash is
+  `UNKNOWN`, never a retryable failure. The same purchase ID is frozen until a
+  human reconciles it.
+- Only an explicit structured wallet rejection is `FAILED`. Tests inject a fake
+  command executor and never send funds.

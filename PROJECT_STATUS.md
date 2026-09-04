@@ -1,10 +1,10 @@
 # Project Status
 
-Last verified: 2026-09-04
+Last verified: 2026-09-05
 
 ## Current Stage
 
-**Gate 6B — UI V2 complete locally; productization and real-wallet connection are next.**
+**Product V2 foundation — the first real payment proof is complete; payment safety and accounting expansion are in progress.**
 
 Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP interface, SQLite persistence, an Agent Skill, a hardened Binance payment adapter, and a bilingual Binance-style operations UI. It is not yet a one-click installable product, and the current machine is not connected to a real Binance Agentic Wallet.
 
@@ -20,7 +20,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 | 5 | Autonomous fallback judge demo | Done |
 | 6A | Initial React demo UI and screenshot suite | Done |
 | 6B | Binance-style UI V2, operational pages, popups, responsive layout, full zh/en switching | Complete locally |
-| 7 | Real BAW wallet connection and controlled on-chain proof | Wallet connected; funding and proof pending |
+| 7 | Real BAW wallet connection and controlled on-chain proof | Complete; Windows→WSL safety bridge verified read-only |
 | 8 | One-service runtime and one-click installer | Not started |
 | 9 | Signed release, upgrades, diagnostics, rollback | Not started |
 
@@ -37,10 +37,10 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 
 ## What Is Not Yet Production-Ready
 
-- Official `baw` CLI v1.0.7 is installed at `/home/meng2062/.local/bin/baw`; user QR authorization succeeded and wallet status is `CONNECTED`.
-- BSC is supported and the wallet address is available locally. The BSC balance query currently returns no non-zero assets, so real payment is not ready.
-- Real vendor wallet addresses are not configured; the adapter still contains demo placeholders.
-- No real on-chain payment proof has been performed from this environment.
+- The first BSC-USDT payment proof is recorded and matched across tx hash, receipt, and ledger.
+- Windows can invoke the authenticated WSL wallet through an argument-only bridge; no shell string contains payment values.
+- Failure/timeout simulation is covered, but UNKNOWN reconciliation still requires an explicit operator workflow.
+- A durable multi-vendor/counterparty registry is not yet implemented.
 - The UI is currently served by a development server, not a packaged background service.
 - No one-click AI host detection, MCP registration, Skill installation, start-on-boot, repair, update, or uninstall flow exists.
 - No signed installer or clean-machine acceptance test exists.
@@ -57,12 +57,12 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Freeze and publish Gate 6B UI V2 with synchronized documentation.
-2. Install and connect the official Binance Agentic Wallet CLI with user-controlled QR authorization.
-3. Replace demo recipient addresses with an approved vendor registry and run a minimal, explicitly confirmed on-chain proof.
-4. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
-5. Build an installer that detects supported AI hosts, registers MCP, installs the Skill, opens onboarding, and verifies the connection.
-6. Add signed releases, upgrades, diagnostics, backup, rollback, repair, and uninstall.
+1. Complete UNKNOWN reconciliation and operator recovery without automatic retries.
+2. Add the V2 Counterparty model and separate immutable transaction facts from editable accounting metadata.
+3. Redesign ledger detail, classification history, internal transfers, and reporting.
+4. Add supplier import and split WalletAdapter from PaymentRail.
+5. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+6. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 
 ## Known Technical Debt
 

@@ -1,6 +1,6 @@
 # Tasks — Agent Treasury
 
-Last synchronized: 2026-09-04
+Last synchronized: 2026-09-05
 
 ## Completed
 
@@ -60,7 +60,19 @@ Last synchronized: 2026-09-04
 - [x] Wallet status, supported-chain, address, and balance preflight
 - [x] Explicitly confirmed minimal real transaction (0.10 USDT on BSC)
 - [x] Match chain transaction hash, Treasury receipt, and ledger record
-- [ ] Verify failure, timeout, and UNKNOWN-state recovery without duplicate payment
+- [x] OS-safe Windows→WSL command bridge and read-only connected-wallet verification
+- [x] Simulated explicit failure, timeout, malformed response, and UNKNOWN freeze without duplicate execution
+- [ ] Add operator reconciliation for UNKNOWN payments; never auto-retry
+
+### Product V2 — Agent Accounting Foundation
+
+- [ ] Counterparty model: supplier, SaaS, AI agent, person, own wallet, unknown
+- [ ] Immutable transaction facts separated from editable accounting metadata
+- [ ] Audited edits for aliases, categories, tags, notes, projects, and cost centers
+- [ ] Internal-transfer classification excluded from consumption statistics by default
+- [ ] Supplier import preview, deduplication, and editable naming
+- [ ] Multi-currency display with original asset, quote currency, and FX snapshot
+- [ ] Refined ledger details, monthly/yearly reports, and natural-language queries
 
 ### Gate 8 — One-Click Productization
 

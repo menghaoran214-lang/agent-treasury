@@ -9,22 +9,19 @@
  * - Explicit PaymentState machine: UNPROCESSED → PROCESSING → COMPLETED | FAILED | UNKNOWN
  */
 
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import type { PaymentProvider, PaymentProviderResult } from './paymentAdapter.js';
 import type { ProviderOffer, PurchaseRequest, ApprovalType } from '../domain/types.js';
 import { ApprovalType as AT } from '../domain/types.js';
 import { sqliteStorage } from '../storage/sqliteStorage.js';
 import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
 import { BSC_USDT_ROUTE, resolvePaymentRoute, routeFingerprint } from '../config/paymentRoutes.js';
-
-const execAsync = promisify(execFile);
+import { runBawCommand } from './walletCommandRunner.js';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 export function getBinanceConfig() {
   return {
-    bawPath: process.env.BAW_CLI_PATH || 'baw',
+    bawPath: process.env.BAW_CLI_PATH || (process.platform === 'win32' ? '/home/meng2062/.local/bin/baw' : 'baw'),
     chainId: process.env.TREASURY_WALLET_CHAIN_ID || '56',
     paymentToken: process.env.TREASURY_PAYMENT_TOKEN || BSC_USDT_ROUTE.token_address,
     paymentTokenSymbol: 'USDT',
@@ -72,20 +69,17 @@ async function callBawWalletSend(
     '--json',
   ];
 
-  let parsed: { success: boolean; data?: { txHash?: string }; error?: { message?: string } };
-  try {
-    const { stdout } = await execAsync(cfg.bawPath, args, { timeout: 30_000 });
-    try { parsed = JSON.parse(stdout); } catch { return { success: false, error: `JSON parse failed: ${stdout.slice(0, 100)}` }; }
-    if (parsed.success && parsed.data?.txHash) {
-      return { success: true, txHash: parsed.data.txHash, raw: parsed };
-    }
-    return { success: false, error: parsed.error?.message || 'baw wallet send returned failure', raw: parsed };
-  } catch (err) {
-    // Network error, timeout, ENOENT, etc.
-    // These could mean the transaction was broadcast — treat as UNKNOWN
-    const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: msg, raw: { exception: msg } };
+  const outcome = await runBawCommand(args);
+  if (outcome.kind === 'success') {
+    const data = outcome.data as { txHash?: string } | undefined;
+    if (data?.txHash) return { success: true, txHash: data.txHash, raw: outcome.raw };
+    return { success: false, error: 'Wallet reported success without a transaction hash', raw: undefined };
   }
+  return {
+    success: false,
+    error: outcome.message,
+    raw: outcome.kind === 'rejected' ? { error: { message: outcome.message }, response: outcome.raw } : undefined,
+  };
 }
 
 // ─── Persistent idempotency ────────────────────────────────────────────────────

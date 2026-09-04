@@ -245,11 +245,11 @@ async function run() {
   // ─── execFile (no injection) ──────────────────────────────────────────────
   console.log('\n--- CLI Injection Audit ---');
 
-  await test('baw CLI call uses execFile not exec (source review)', async () => {
-    const src = await import('fs/promises').then(fs => fs.readFile(resolve('src/adapters/binancePaymentProvider.ts'), 'utf8'));
-    // Must use execFile, not exec with string concatenation
-    assert(!src.includes('exec(') || src.includes('execFile'), 'Must use execFile for baw calls, not exec() with shell string');
-    assert(src.includes('execFile'), 'Should use execFile from child_process');
+  await test('baw CLI bridge uses execFile argument arrays, never a shell string', async () => {
+    const src = await import('fs/promises').then(fs => fs.readFile(resolve('src/adapters/walletCommandRunner.ts'), 'utf8'));
+    assert(src.includes('execFile('), 'Bridge should use execFile from child_process');
+    assert(!src.includes('exec('), 'Bridge must not use exec() with a shell string');
+    assert(src.includes("executable: 'wsl.exe'"), 'Bridge should support the Windows to WSL boundary');
   });
 
   // ─── Demo provider parity ──────────────────────────────────────────────────
