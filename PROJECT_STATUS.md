@@ -37,7 +37,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 
 ## What Is Not Yet Production-Ready
 
-- `baw` is not installed or connected on the current Windows/WSL environment.
+- Official `baw` CLI v1.0.7 is installed at `/home/meng2062/.local/bin/baw`; wallet status is `UNCONNECTED` pending user QR authorization.
 - Real vendor wallet addresses are not configured; the adapter still contains demo placeholders.
 - No real on-chain payment proof has been performed from this environment.
 - The UI is currently served by a development server, not a packaged background service.
