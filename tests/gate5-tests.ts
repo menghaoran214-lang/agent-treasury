@@ -126,13 +126,15 @@ async function run() {
 
     console.log('--- Integration Evidence ---');
 
-    await test('evidence: NOT_CONFIGURED when no real payment', async () => {
+    await test('evidence: confirmed BSC-USDT real payment', async () => {
       const { data } = await httpReq('GET', '/api/evidence', undefined, port);
-      assert(data.status === 'NOT_CONFIGURED', `got ${data.status}`);
-      assert(data.real_payment_verified === false, 'should not be verified');
+      assert(data.status === 'CONFIRMED', `got ${data.status}`);
+      assert(data.real_payment_verified === true, 'should be verified');
       assert(data.binance_integration_available === true, 'should be available');
       assert((data.network as string).includes('BSC'), `got ${data.network}`);
-      assert(data.asset === 'USDC', `got ${data.asset}`);
+      assert(data.asset === 'USDT', `got ${data.asset}`);
+      assert(data.amount === 0.10, `got ${data.amount}`);
+      assert((data.verified_tx_hash as string).startsWith('0x'), 'tx hash missing');
     });
 
     await test('evidence: no secrets exposed', async () => {

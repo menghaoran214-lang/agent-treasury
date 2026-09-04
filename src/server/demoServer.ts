@@ -10,6 +10,7 @@ import { randomUUID } from 'crypto';
 import { sqliteStorage } from '../storage/index.js';
 import { runTreasury } from '../runtime/treasury.js';
 import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
+import { REAL_PAYMENT_EVIDENCE } from '../config/realPaymentEvidence.js';
 import { getGate5VendorsForResource, GATE5_VENDORS } from '../providers/mockProviders.js';
 import type { PurchaseRequest } from '../domain/types.js';
 import { PurchaseStrategy } from '../domain/types.js';
@@ -158,16 +159,17 @@ app.get('/api/evidence', (_req, res) => {
   res.json({
     binance_integration_available: true,
     integration_type: 'Binance Agentic Wallet (baw CLI)',
-    network: 'BSC Mainnet (chainId: 56)',
-    asset: 'USDC',
-    contract: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
-    real_payment_verified: false,
-    verified_tx_hash: null,
-    verified_at: null,
-    status: 'NOT_CONFIGURED',
+    network: REAL_PAYMENT_EVIDENCE.network,
+    asset: REAL_PAYMENT_EVIDENCE.asset,
+    contract: REAL_PAYMENT_EVIDENCE.token_contract,
+    amount: REAL_PAYMENT_EVIDENCE.amount,
+    real_payment_verified: true,
+    verified_tx_hash: REAL_PAYMENT_EVIDENCE.tx_hash,
+    verified_at: REAL_PAYMENT_EVIDENCE.verified_at,
+    status: REAL_PAYMENT_EVIDENCE.status,
     provider: 'binancePaymentProvider',
     payment_mode: process.env.TREASURY_PAYMENT_MODE || 'mock',
-    message: 'Real Binance payment verification pending. Set TREASURY_REAL_PROOF_RECIPIENT to execute real payment.',
+    message: 'First BSC-USDT payment confirmed on-chain and recorded by Treasury.',
   });
 });
 

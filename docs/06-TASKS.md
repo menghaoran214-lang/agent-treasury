@@ -56,8 +56,8 @@ Last synchronized: 2026-09-04
 - [x] Local verified real-proof vendor route; demo vendors cannot enter Binance payment mode
 - [ ] Durable encrypted vendor registry for multiple production vendors
 - [x] Wallet status, supported-chain, address, and balance preflight
-- [ ] Explicitly confirmed minimal real transaction
-- [ ] Match chain transaction hash, Treasury receipt, and ledger record
+- [x] Explicitly confirmed minimal real transaction (0.10 USDT on BSC)
+- [x] Match chain transaction hash, Treasury receipt, and ledger record
 - [ ] Verify failure, timeout, and UNKNOWN-state recovery without duplicate payment
 
 ### Gate 8 — One-Click Productization
