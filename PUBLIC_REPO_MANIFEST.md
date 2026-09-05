@@ -8,13 +8,14 @@ This manifest separates the product source from local credentials, internal deve
 
 ## Security scan summary
 
-- Scanned the current worktree and all 36 reachable Git commits for common private-key blocks, GitHub tokens, OpenAI keys, AWS access keys, and long assigned secrets.
-- No matches were found for those high-confidence patterns.
+- Scanned the current worktree and all reachable Git commits for common private-key blocks, GitHub tokens, OpenAI keys, AWS access keys, and long assigned secrets.
+- TruffleHog 3.97.1 found **zero verified secrets** in the full Git history.
+- In the post-change full-history run, Gitleaks 8.30.1 reported 12 generic-key heuristic findings. All 12 were manually classified as false positives: public BSC token-contract addresses, safe example/test placeholders, and one translation key. Gitleaks was run with redaction, so possible values were not printed into release notes.
 - `.env.local` exists locally, is ignored by Git, and is not tracked.
 - `.env.example` is tracked and contains variable names and safe placeholders only.
 - No tracked `.db`, `.db-wal`, `.db-shm`, `.log`, `node_modules`, `dist`, or `coverage` content was found.
-- `gitleaks` and `trufflehog` are not installed on this machine; the scan used repository-local pattern checks and is not a substitute for a second independent scanner before release.
-- A committed transaction hash in `src/config/realPaymentEvidence.ts` is public blockchain data, not a secret, but can link activity to wallet addresses. It requires an explicit privacy decision before publication.
+- Gitleaks 8.30.1 is installed on Windows, and TruffleHog 3.97.1 is installed in WSL from its official checksum-verifying installer.
+- The owner explicitly approved retaining the committed transaction hash in `src/config/realPaymentEvidence.ts` as public on-chain proof. It remains public blockchain evidence and can permanently link activity to wallet addresses.
 
 If any real credential is later found in current files or history, treat it as compromised and rotate or revoke it. Do not rely on deleting the file alone.
 
@@ -22,7 +23,7 @@ If any real credential is later found in current files or history, treat it as c
 
 These files describe or implement the public product:
 
-- `src/` except any real-payment evidence that is moved to the private archive after review.
+- `src/`, including the owner-approved public on-chain proof in `src/config/realPaymentEvidence.ts`.
 - `apps/demo-ui/src/` and `apps/demo-ui/public/`.
 - `skills/agent-treasury/`.
 - `tests/` after confirming fixtures contain no personal identifiers.
@@ -35,12 +36,10 @@ These files describe or implement the public product:
 
 Keep these outside the public repository unless deliberately rewritten for publication:
 
-- `UI参考图/` — six design-generation reference images, about 9.5 MB total, not runtime assets.
 - `docs/gate4-readiness.md` — internal gate evidence and implementation history.
 - `docs/binance-integration-decision.md` — internal wallet-integration evidence and local environment history.
 - `.codex-checkpoints/` — local rollback material.
 - Local `.env.local`, databases, logs, wallet sessions, QR/login data, payment evidence, and operator notes.
-- Exact real-payment identifiers from `src/config/realPaymentEvidence.ts` unless the owner explicitly approves their public, permanent association with the project.
 
 Archiving does not mean deleting. Preserve a private copy and verify it before removing anything from the public candidate.
 
@@ -52,34 +51,28 @@ These files should be reproducible and should not be treated as source-of-truth:
 - `node_modules/` and `apps/demo-ui/node_modules/`.
 - SQLite `*.db`, `*.db-wal`, and `*.db-shm` files.
 - Logs, test coverage, temporary exports, and package caches.
-- `screenshots/` — the current ten files are one repeated placeholder image. Replace them with a verified final visual baseline before release.
+- `screenshots/` — ten reproducible captures generated from the current build against an isolated mock database.
 
 ## REMOVE FROM PUBLIC CANDIDATE
 
 No file is approved for permanent deletion by this audit. Before public release, remove or replace only after a private archive and a clean-tree verification:
 
-- Repeated placeholder screenshots after real screenshots are generated.
 - Obsolete gate/handoff narration that duplicates current product documentation.
-- Presentation reference images after they have been privately archived.
 - Exact personal paths and machine-specific defaults. Known user-specific WSL defaults have been replaced with portable configuration.
 
 ## Repository size findings
 
-- Current tracked content: approximately 10.6 MB.
-- Git loose-object storage at audit time: approximately 9.4 MiB.
-- The six files under `UI参考图/` dominate tracked size.
-- The ten files under `screenshots/` share the same Git blob and are not valid acceptance evidence.
+- The six presentation-only files formerly under `UI参考图/` were removed from the current tree with the owner's approval. They remain recoverable from Git commit `18bd769` and earlier history.
+- The placeholder screenshot blobs were replaced by ten current UI states at 1440×900 (the full settings capture is taller).
+- All ten final screenshot files have distinct SHA-256 hashes.
 
 Removing large files from the current tree will not remove their historical blobs. Any history rewrite requires a verified backup, credential/privacy assessment, and explicit user confirmation.
 
 ## Release blockers
 
-1. Decide whether the real transaction hash may be permanently public; otherwise move exact evidence to a private archive and retain only a redacted verification statement.
-2. Archive `UI参考图/` privately and decide whether to remove it from the public candidate.
-3. Replace the repeated screenshot placeholders with ten real, current UI captures.
-4. Run an independent secret scanner such as Gitleaks against the full history.
-5. Add `SECURITY.md`, a formal contribution guide, and an explicit license decision.
-6. Complete clean-machine installation and uninstall acceptance before describing the product as one-click installable.
+1. Complete clean-machine installation and uninstall acceptance before describing the product as one-click installable.
+2. Choose a public software license before granting redistribution rights; until then the documented decision is all rights reserved.
+3. Decide whether to add a repository-local Gitleaks allowlist for the reviewed public-address and placeholder false positives, so CI can fail only on new actionable findings.
 
 ## Final pre-publish check
 

@@ -76,5 +76,5 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 1. Root Jest uses `--forceExit`; database lifecycle should eventually be closed explicitly.
 2. `TREASURY_TEST_MODE` and inline test vendor resolution should move to dependency injection after the hackathon.
-3. The checked-in acceptance screenshots represent the earlier Gate 6A UI and must be regenerated for the final Gate 6B visual baseline.
-4. The demo UI and MCP server are separate development processes; packaging requires a unified service boundary.
+3. The Gate 6B visual baseline now contains ten distinct, reproducible captures generated from the current UI against an isolated mock database.
+4. The unified service boundary is verified; production packaging still needs lifecycle management, clean-machine installation, repair, upgrade, rollback, and uninstall acceptance.

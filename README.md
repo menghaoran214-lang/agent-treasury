@@ -40,6 +40,16 @@ Users keep speaking naturally inside an integrated AI host—for example, “Get
 
 In-browser notifications and cards work today. Cross-host operating-system notifications are Gate 8 work and are not complete.
 
+## Product preview
+
+| Live procurement workspace | Human approval card |
+|---|---|
+| ![Live procurement decision](screenshots/02-live-decision.png) | ![Human approval modal](screenshots/04-approval-modal.png) |
+| Smart ledger | Vendor import preview |
+| ![Smart ledger](screenshots/06-ledger.png) | ![Vendor import modal](screenshots/09-vendor-import.png) |
+
+The repository contains ten reproducible screenshots covering setup, automatic completion, approval, exception handling, accounting, receipts, policy, vendor import, and the English UI. Run `npm run screenshot` to regenerate them against an isolated mock database; the command never uses the operator's live database or real-payment mode.
+
 ## What works today
 
 - Chat/host integration through an Agent Skill and MCP tools.
@@ -124,7 +134,7 @@ See [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`docs/07-PRODUCT-V2-ROADMAP.md`](
 
 ## Contributing
 
-The project is still preparing for public release. Reproducible bug reports, documentation corrections, wallet/rail design feedback, and secret-free test evidence are welcome. Run `npm run test:all` before proposing code, and never commit `.env` files, databases, logs, wallet sessions, transaction evidence, or credentials. A formal contribution guide will be added before public release.
+The project is still preparing for public release. Reproducible bug reports, documentation corrections, wallet/rail design feedback, and secret-free test evidence are welcome. Run `npm run test:all` before proposing code, and never commit `.env` files, databases, logs, wallet sessions, transaction evidence, or credentials. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and report sensitive findings through [`SECURITY.md`](SECURITY.md).
 
 ## Contact
 

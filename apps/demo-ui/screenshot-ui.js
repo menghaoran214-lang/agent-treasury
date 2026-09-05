@@ -1,159 +1,117 @@
 #!/usr/bin/env node
-/**
- * screenshot-ui.js — Capture 10 screenshots from the live demo UI.
- * Requires: demo server :3333 + Vite :5173 already running.
- * Usage: node scripts/screenshot-ui.js
- */
+/** Build the UI first, then capture ten current product states from an isolated service/database. */
 import { chromium } from '@playwright/test';
-import { mkdirSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import { mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
-const BASE = 'http://localhost:5173';
-const OUT = resolve(ROOT, 'screenshots');
-mkdirSync(OUT, { recursive: true });
+const here = dirname(fileURLToPath(import.meta.url));
+const project = resolve(here, '..', '..');
+const out = resolve(project, 'screenshots');
+const port = 41000 + Math.floor(Math.random() * 1000);
+const base = `http://127.0.0.1:${port}`;
+const db = join(tmpdir(), `agent-treasury-screenshots-${Date.now()}.db`);
+mkdirSync(out, { recursive: true });
 
-const browser = await chromium.launch({ headless: true });
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-const page = await ctx.newPage();
+const service = spawn(process.execPath, ['--import', 'tsx', 'src/server/unifiedService.ts'], {
+  cwd: project,
+  env: { ...process.env, TREASURY_PORT: String(port), TREASURY_DB_PATH: db, TREASURY_PAYMENT_MODE: 'mock' },
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
 
-async function shot(name) {
-  await page.goto(BASE, { waitUntil: 'networkidle', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: `${OUT}/${name}`, fullPage: false });
-  console.log(`  ✓ ${name}`);
-}
-
-async function shotHash(hash, name) {
-  await page.goto(BASE + '/#' + hash, { waitUntil: 'networkidle', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: `${OUT}/${name}`, fullPage: false });
-  console.log(`  ✓ ${name}`);
-}
-
-// ─── 01 ─── Setup page (default zh-CN)
-await shot('01-setup-zh.png');
-
-// ─── 02 ─── Live decision page — run demo and capture
-async function runDemoAndShot() {
-  const resp = await page.evaluate(async () => {
-    await fetch('/api/demo/reset', { method: 'POST' });
-    const r = await fetch('/api/demo/run', { method: 'POST' });
-    return r.json();
-  });
-  const runId = resp.run_id;
-  for (let i = 0; i < 40; i++) {
-    await page.waitForTimeout(400);
-    const s = await page.evaluate(async (id) => {
-      const r = await fetch(`/api/demo/state/${id}`);
-      return r.json();
-    }, runId);
-    if (s.phase === 'completed' || s.phase === 'error') break;
+async function waitForService() {
+  for (let i = 0; i < 120; i += 1) {
+    try { if ((await fetch(`${base}/health`)).ok) return; } catch {}
+    await new Promise(resolveWait => setTimeout(resolveWait, 100));
   }
-  await page.goto(BASE + '/#/decision', { waitUntil: 'networkidle', timeout: 15000 });
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${OUT}/02-live-decision.png`, fullPage: false });
-  console.log('  ✓ 02-live-decision.png');
-  return runId;
+  throw new Error('Isolated screenshot service did not become ready');
 }
-const runId = await runDemoAndShot();
 
-// ─── 03 ─── Success toast — wait for toast to appear on ledger page
-await page.goto(BASE + '/#/ledger', { waitUntil: 'networkidle', timeout: 15000 });
-await page.waitForTimeout(500);
-await page.screenshot({ path: `${OUT}/03-success-toast.png`, fullPage: false });
-console.log('  ✓ 03-success-toast.png');
+let browser;
+try {
+  await waitForService();
+  browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'zh-CN', colorScheme: 'dark' });
+  const page = await context.newPage();
 
-// ─── 04 ─── Approval modal — set tiny limit, run demo, decision page shows modal
-await page.evaluate(async () => {
-  await fetch('/api/demo/reset', { method: 'POST' });
-  await fetch('/api/policy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auto_pay_limit: 0.001, single_transaction_limit: 0.001 }),
+  const capture = async (name, fullPage = false) => {
+    await page.screenshot({ path: resolve(out, name), fullPage });
+    console.log(`  ✓ ${name}`);
+  };
+  const configure = async (lang = 'zh-CN', setupDone = true) => {
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.evaluate(({ language, done }) => {
+      localStorage.setItem('treasury-lang', language);
+      if (done) localStorage.setItem('treasury-setup-done', '1');
+      else localStorage.removeItem('treasury-setup-done');
+    }, { language: lang, done: setupDone });
+    await page.reload({ waitUntil: 'networkidle' });
+  };
+  const go = async hash => {
+    await page.goto(`${base}/#${hash}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(350);
+  };
+
+  await configure('zh-CN', false);
+  await go('setup');
+  await capture('01-setup-zh.png');
+
+  await configure('zh-CN', true);
+  await go('decision');
+  await capture('02-live-decision.png');
+
+  await page.getByRole('button', { name: /运行采购演示/ }).click();
+  await page.locator('.toast').waitFor({ state: 'visible', timeout: 30000 });
+  await capture('03-success-toast.png');
+  await page.locator('.toast button').click();
+
+  await go('decision');
+  await page.getByLabel('流程演示').selectOption('approval');
+  await page.getByRole('button', { name: /运行采购演示/ }).click();
+  await page.locator('.modal-overlay').waitFor({ state: 'visible' });
+  await page.waitForTimeout(250);
+  await capture('04-approval-modal.png');
+  await page.locator('.modal-close').click();
+
+  await page.getByLabel('流程演示').selectOption('exception');
+  await page.getByRole('button', { name: /运行采购演示/ }).click();
+  await page.locator('.modal-overlay').waitFor({ state: 'visible' });
+  await page.waitForTimeout(250);
+  await capture('05-exception-modal.png');
+  await page.locator('.modal-close').click();
+
+  await go('ledger');
+  await capture('06-ledger.png');
+
+  const receiptId = await page.evaluate(async () => {
+    const data = await (await fetch('/api/ledger')).json();
+    const completed = data.entries?.find(entry => (entry.receipt?.status ?? entry.status) === 'completed');
+    return completed?.receipt?.id ?? completed?.receipt_id;
   });
-  const r = await fetch('/api/demo/run', { method: 'POST' });
-  return r.json();
-});
-// Wait for pending_approval phase
-for (let i = 0; i < 40; i++) {
-  await page.waitForTimeout(400);
-  const s = await page.evaluate(async () => {
-    // Get current run id from demo state
-    const r = await fetch('/api/demo/state/' + (window.__currentRunId || ''));
-    return r.json().catch(() => ({ phase: 'unknown' }));
-  });
-  if (s.phase === 'pending_approval') break;
-  if (s.phase === 'completed' || s.phase === 'error') break;
-}
-await page.goto(BASE + '/#/decision', { waitUntil: 'networkidle', timeout: 15000 });
-await page.waitForTimeout(1500);
-await page.screenshot({ path: `${OUT}/04-approval-modal.png`, fullPage: false });
-console.log('  ✓ 04-approval-modal.png');
+  if (!receiptId) throw new Error('No completed receipt available for screenshot');
+  await go(`receipt/${receiptId}`);
+  await capture('07-completed-receipt.png');
 
-// ─── 05 ─── Exception — demo doesn't expose exception trigger; use decision page error state
-await page.evaluate(async () => {
-  await fetch('/api/demo/reset', { method: 'POST' });
-  const r = await fetch('/api/demo/run', { method: 'POST' });
-  return r.json();
-});
-for (let i = 0; i < 40; i++) {
-  await page.waitForTimeout(400);
-  const s = await page.evaluate(async () => {
-    const r = await fetch('/api/demo/state/current').catch(() => ({ json: () => ({ phase: 'unknown' }) }));
-    return r.json();
-  });
-  if (s.phase === 'error') break;
-  if (s.phase === 'completed') break;
-}
-await page.goto(BASE + '/#/decision', { waitUntil: 'networkidle', timeout: 15000 });
-await page.waitForTimeout(1500);
-await page.screenshot({ path: `${OUT}/05-exception-modal.png`, fullPage: false });
-console.log('  ✓ 05-exception-modal.png');
+  await go('settings');
+  await capture('08-policy-settings.png', true);
 
-// ─── 06 ─── Ledger page
-await shotHash('/ledger', '06-ledger.png');
+  await go('vendors');
+  await page.getByRole('button', { name: /导入供应商/ }).click();
+  await page.locator('.modal-overlay').waitFor({ state: 'visible' });
+  await page.waitForTimeout(250);
+  await capture('09-vendor-import.png');
 
-// ─── 07 ─── Completed receipt — find from ledger
-const receiptId = await page.evaluate(async () => {
-  const r = await fetch('/api/ledger');
-  const d = await r.json();
-  const completed = (d.entries || []).find(e => e.status === 'completed');
-  return completed?.receipt_id;
-});
-if (receiptId) {
-  await shotHash(`/receipt/${receiptId}`, '07-completed-receipt.png');
-} else {
-  await shotHash('/ledger', '07-completed-receipt.png');
+  await configure('en', true);
+  await go('reports');
+  await capture('10-english-analytics.png');
+} finally {
+  if (browser) await browser.close();
+  const stopped = new Promise(resolveStop => service.once('exit', resolveStop));
+  service.kill('SIGTERM');
+  await Promise.race([stopped, new Promise(resolveWait => setTimeout(resolveWait, 3000))]);
+  for (const suffix of ['', '-wal', '-shm']) rmSync(`${db}${suffix}`, { force: true });
 }
 
-// ─── 08 ─── Blocked decision record — navigate to decision page after completed run
-await page.evaluate(async () => {
-  await fetch('/api/demo/reset', { method: 'POST' });
-  const r = await fetch('/api/demo/run', { method: 'POST' });
-  return r.json();
-});
-for (let i = 0; i < 40; i++) {
-  await page.waitForTimeout(400);
-  const s = await page.evaluate(async () => {
-    const r = await fetch('/api/demo/state/current').catch(() => ({ json: () => ({ phase: 'unknown' }) }));
-    return r.json();
-  });
-  if (s.phase === 'completed' || s.phase === 'error') break;
-}
-await page.goto(BASE + '/#/decision', { waitUntil: 'networkidle', timeout: 15000 });
-await page.waitForTimeout(1500);
-await page.screenshot({ path: `${OUT}/08-blocked-decision-record.png`, fullPage: false });
-console.log('  ✓ 08-blocked-decision-record.png');
-
-// ─── 09 ─── Vendor registry
-await shotHash('/vendor', '09-vendor-registry.png');
-
-// ─── 10 ─── English mode
-await page.evaluate(() => localStorage.setItem('lang', 'en'));
-await shot('10-english-mode.png');
-
-await browser.close();
-console.log(`\nAll screenshots → ${OUT}/`);
+console.log(`\nTen verified screenshots written to ${out}`);
