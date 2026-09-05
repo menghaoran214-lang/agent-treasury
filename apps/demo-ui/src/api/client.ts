@@ -172,10 +172,24 @@ export interface Vendor {
   status: 'verified' | 'usable' | 'pending' | 'restricted' | 'disabled' | 'blocked';
 }
 
+export interface VendorImportCandidate {
+  row: number; name: string; url: string; category: string;
+  type: 'supplier' | 'saas_provider'; status: 'ready' | 'duplicate' | 'invalid'; message?: string;
+}
+
+export interface VendorImportResult {
+  batch_id: string; imported: number; failed: number;
+  results: Array<VendorImportCandidate & { id?: string }>;
+}
+
 export const vendorApi = {
   list: () => get<Vendor[]>('/vendors'),
   add: (url: string) => post<Vendor>('/vendors', { url }),
+  update: (id: string, patch: Pick<Vendor, 'name' | 'category'>) => post<Vendor>(`/vendors/${id}`, patch),
   setStatus: (id: string, status: Vendor['status']) => post<Vendor>(`/vendors/${id}/status`, { status }),
+  previewImport: (text: string) => post<{ candidates: VendorImportCandidate[] }>('/vendor-import/preview', { text }),
+  commitImport: (candidates: VendorImportCandidate[]) => post<VendorImportResult>('/vendor-import/commit', { candidates }),
+  undoImport: (batchId: string) => post<{ batch_id: string; removed: number; status: string }>(`/vendor-import/${batchId}/undo`),
 };
 
 // ─── Approval ────────────────────────────────────────────────────────────────

@@ -171,6 +171,8 @@
     "approvalType": "Approved By",
     "paymentMethod": "Payment Method",
     "status": "Status",
+    "actions": "Actions",
+    "editTitle": "Edit Vendor",
     "createdAt": "Time",
     "fairPrice.pass": "Pass",
     "fairPrice.overprice": "Overprice",
@@ -210,7 +212,13 @@
     "addPrompt": "Enter vendor URL to add to your registry",
     "addNote": "Adding a vendor does not automatically trust it — it still needs to pass security, price, and policy checks.",
     "cancel": "Cancel",
-    "add": "Add"
+    "add": "Add",
+    "import": {
+      "title": "Import Vendors", "prompt": "Paste one or more vendor records. Preview and deduplicate them before saving.", "data": "Import Data",
+      "format": "One row per vendor: Name,URL,Category,Type. A URL by itself also works.", "preview": "Preview & Deduplicate", "review": "Edit names and categories before import. Duplicate or invalid rows will not be saved.",
+      "ready": "Ready", "duplicate": "Duplicate", "invalid": "Invalid", "confirm": "Confirm Import", "done": "Import Complete",
+      "summary": "Imported {ok}; skipped or failed {failed}.", "undo": "Undo This Import"
+    }
   },
   "settings": {
     "title": "Settings",

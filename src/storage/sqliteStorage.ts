@@ -133,6 +133,27 @@ const _db = (() => {
     actor TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS supplier_profiles (
+    counterparty_id TEXT PRIMARY KEY,
+    url TEXT NOT NULL UNIQUE,
+    category TEXT NOT NULL DEFAULT 'api',
+    source TEXT NOT NULL DEFAULT 'user_added',
+    status TEXT NOT NULL DEFAULT 'pending',
+    import_batch_id TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(counterparty_id) REFERENCES counterparties(id)
+  );
+  CREATE TABLE IF NOT EXISTS vendor_import_batches (
+    id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    imported_count INTEGER NOT NULL,
+    failed_count INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'completed',
+    result_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    undone_at TEXT
+  );
 `);
   const paymentColumns = new Set(((db as unknown as { prepare(s: string): { all(): Array<{ name: string }> } }).prepare('PRAGMA table_info(payment_records)').all()).map(c => c.name));
   const routeColumns: Record<string, string> = {
@@ -366,6 +387,54 @@ export const sqliteStorage = {
       id: String(row.id), counterparty_id: String(row.counterparty_id), before: row.before_json ? JSON.parse(String(row.before_json)) : null,
       after: JSON.parse(String(row.after_json)), actor: String(row.actor), created_at: String(row.created_at),
     }));
+  },
+
+  saveVendorProfile(input: { counterparty_id: string; url: string; category: string; source: string; status: string; import_batch_id?: string | null }): void {
+    const now = new Date().toISOString();
+    _db.prepare(`INSERT INTO supplier_profiles (counterparty_id,url,category,source,status,import_batch_id,created_at,updated_at)
+      VALUES (:counterparty_id,:url,:category,:source,:status,:import_batch_id,:created_at,:updated_at)
+      ON CONFLICT(counterparty_id) DO UPDATE SET url=excluded.url,category=excluded.category,source=excluded.source,
+      status=excluded.status,import_batch_id=COALESCE(excluded.import_batch_id,supplier_profiles.import_batch_id),updated_at=excluded.updated_at`).run({
+        ...input, import_batch_id: input.import_batch_id ?? null, created_at: now, updated_at: now,
+      });
+  },
+
+  listVendors(): Array<{ id: string; name: string; url: string; category: string; source: string; status: string }> {
+    return _db.prepare(`SELECT c.id, c.display_name AS name, s.url, s.category, s.source, s.status
+      FROM supplier_profiles s JOIN counterparties c ON c.id = s.counterparty_id ORDER BY c.display_name`).all() as Array<{ id: string; name: string; url: string; category: string; source: string; status: string }>;
+  },
+
+  findVendorByUrl(url: string): { id: string; name: string; url: string } | null {
+    return (_db.prepare(`SELECT c.id, c.display_name AS name, s.url FROM supplier_profiles s JOIN counterparties c ON c.id=s.counterparty_id WHERE lower(s.url)=lower(?)`).get(url) as { id: string; name: string; url: string } | undefined) ?? null;
+  },
+
+  setVendorStatus(id: string, status: string): void {
+    _db.prepare('UPDATE supplier_profiles SET status = ?, updated_at = ? WHERE counterparty_id = ?').run(status, new Date().toISOString(), id);
+  },
+
+  saveVendorImportBatch(batch: { id: string; source: string; imported_count: number; failed_count: number; result: unknown }): void {
+    _db.prepare(`INSERT INTO vendor_import_batches (id,source,imported_count,failed_count,status,result_json,created_at) VALUES (?,?,?,?,?,?,?)`).run(
+      batch.id, batch.source, batch.imported_count, batch.failed_count, 'completed', JSON.stringify(batch.result), new Date().toISOString(),
+    );
+  },
+
+  undoVendorImport(batchId: string): number {
+    const batch = _db.prepare('SELECT status FROM vendor_import_batches WHERE id = ?').get(batchId) as { status: string } | undefined;
+    if (!batch || batch.status !== 'completed') return 0;
+    const undo = _db.transaction(() => {
+      const ids = (_db.prepare('SELECT counterparty_id FROM supplier_profiles WHERE import_batch_id = ?').all(batchId) as Array<{ counterparty_id: string }>).map(row => row.counterparty_id);
+      _db.prepare('DELETE FROM supplier_profiles WHERE import_batch_id = ?').run(batchId);
+      for (const id of ids) {
+        const inUse = (_db.prepare('SELECT COUNT(*) AS c FROM accounting_metadata WHERE counterparty_id = ?').get(id) as { c: number }).c > 0;
+        if (!inUse) {
+          _db.prepare('DELETE FROM counterparty_revisions WHERE counterparty_id = ?').run(id);
+          _db.prepare('DELETE FROM counterparties WHERE id = ?').run(id);
+        }
+      }
+      _db.prepare("UPDATE vendor_import_batches SET status='undone', undone_at=? WHERE id=?").run(new Date().toISOString(), batchId);
+      return ids.length;
+    });
+    return undo();
   },
 
   getAccounting(purchaseId: string): AccountingMetadata | null {

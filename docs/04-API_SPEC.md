@@ -13,6 +13,19 @@
 `accounting` objects. Spend totals exclude entries whose accounting metadata sets
 `include_in_spend` to false; the entries themselves are never hidden.
 
+## Vendor import
+
+- `POST /api/vendor-import/preview` parses newline-delimited URL or CSV-like
+  `name,url,category,type` input without writing data.
+- `POST /api/vendor-import/commit` imports only revalidated ready rows and returns
+  per-row results plus a batch ID. Duplicate and invalid rows are reported, not
+  silently discarded.
+- `POST /api/vendor-import/:batchId/undo` removes only unused counterparties
+  created by that batch and marks the batch undone. Existing vendors are never
+  removed by an import undo.
+- `POST /api/vendors/:id` edits the persisted display name and category after
+  import; the linked Counterparty revision provides an audit trail.
+
 ## Transport
 
 JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.

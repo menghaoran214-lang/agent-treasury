@@ -171,6 +171,8 @@
     "approvalType": "批准方式",
     "paymentMethod": "支付方式",
     "status": "状态",
+    "actions": "操作",
+    "editTitle": "编辑供应商",
     "createdAt": "时间",
     "fairPrice.pass": "通过",
     "fairPrice.overprice": "超价",
@@ -210,7 +212,13 @@
     "addPrompt": "输入供应商 URL 添加到你的供应商库",
     "addNote": "添加供应商不等于信任该供应商 — 仍需通过安全、价格和兼容性审核。",
     "cancel": "取消",
-    "add": "添加"
+    "add": "添加",
+    "import": {
+      "title": "导入供应商", "prompt": "粘贴一条或多条供应商记录，确认前先预览和查重。", "data": "导入内容",
+      "format": "每行格式：名称,URL,分类,类型。也可以只填 URL。", "preview": "预览与查重", "review": "导入前可修改名称和分类；重复或无效记录不会写入。",
+      "ready": "可导入", "duplicate": "已存在", "invalid": "无效", "confirm": "确认导入", "done": "导入已完成",
+      "summary": "成功 {ok} 条，跳过/失败 {failed} 条。", "undo": "撤销这次导入"
+    }
   },
   "settings": {
     "title": "设置",

@@ -70,7 +70,7 @@ Last synchronized: 2026-09-05
 - [x] Immutable transaction facts separated from editable accounting metadata
 - [x] Audited edits for aliases, categories, tags, notes, projects, and cost centers
 - [x] Internal-transfer classification excluded from consumption statistics by default
-- [ ] Supplier import preview, deduplication, and editable naming
+- [x] Supplier import preview, deduplication, editable naming, partial-result reporting, and batch undo
 - [ ] Multi-currency display with original asset, quote currency, and FX snapshot
 - [ ] Refined ledger details, monthly/yearly reports, and natural-language queries
 

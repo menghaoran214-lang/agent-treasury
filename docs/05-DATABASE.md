@@ -18,6 +18,11 @@ Receipt, amount, currency, payment reference,
 chain facts, and original ledger snapshots remain immutable. Internal transfers
 remain visible in the ledger but default to `include_in_spend = 0`.
 
+`supplier_profiles` adds vendor URL, category, source, status, and import-batch
+ownership to a Counterparty. `vendor_import_batches` stores the complete per-row
+result and undo state. A batch undo only deletes profiles created by that batch;
+counterparties already referenced by accounting records are preserved.
+
 ## Storage Engine
 
 SQLite via `better-sqlite3`. DB path configured via `TREASURY_DB_PATH` env var (default: `./data/treasury.db`).

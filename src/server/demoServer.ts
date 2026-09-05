@@ -15,6 +15,7 @@ import { getGate5VendorsForResource, GATE5_VENDORS } from '../providers/mockProv
 import type { PurchaseRequest } from '../domain/types.js';
 import { PurchaseStrategy, CounterpartyType } from '../domain/types.js';
 import type { Policy } from '../domain/types.js';
+import { previewVendorImport, commitVendorImport, type VendorImportCandidate } from '../runtime/vendorImport.js';
 
 const app = express();
 app.use(express.json());
@@ -326,34 +327,68 @@ app.post('/api/policy', (req, res) => {
 
 // ─── Vendors ─────────────────────────────────────────────────────────────────
 
-// In-memory vendor registry for demo
-const vendorRegistry: Array<{
-  id: string; name: string; url: string; category: string;
-  source: string; status: string;
-}> = [
-  { id: 'v1', name: 'AlphaData', url: 'https://alpha.data', category: 'api', source: 'treasury_verified', status: 'usable' },
-  { id: 'v2', name: 'SignalX', url: 'https://signalx.ai', category: 'api', source: 'treasury_verified', status: 'usable' },
-  { id: 'v3', name: 'DataPro', url: 'https://datapro.io', category: 'market_data', source: 'ai_discovered', status: 'usable' },
-];
+if (sqliteStorage.listVendors().length === 0) {
+  for (const seed of [
+    { id: 'v1', name: 'AlphaData', url: 'https://alpha.data', category: 'api', source: 'treasury_verified' },
+    { id: 'v2', name: 'SignalX', url: 'https://signalx.ai', category: 'api', source: 'treasury_verified' },
+    { id: 'v3', name: 'DataPro', url: 'https://datapro.io', category: 'market_data', source: 'ai_discovered' },
+  ]) {
+    sqliteStorage.upsertCounterparty({ id: seed.id, system_name: seed.url, display_name: seed.name, type: CounterpartyType.SUPPLIER, aliases: [], tags: [], notes: '', default_category: seed.category });
+    sqliteStorage.saveVendorProfile({ counterparty_id: seed.id, url: seed.url, category: seed.category, source: seed.source, status: 'usable' });
+  }
+}
 
 app.get('/api/vendors', (_req, res) => {
-  res.json(vendorRegistry);
+  res.json(sqliteStorage.listVendors());
 });
 
 app.post('/api/vendors', (req, res) => {
   const { url } = req.body as { url?: string };
   if (!url) { res.status(400).json({ error: 'url required' }); return; }
-  const name = new URL(url).hostname.replace('www.', '');
-  const vendor = { id: `v-${Date.now()}`, name, url, category: 'api', source: 'user_added', status: 'pending' };
-  vendorRegistry.push(vendor);
-  res.json(vendor);
+  const preview = previewVendorImport(url);
+  if (!preview[0] || preview[0].status !== 'ready') { res.status(400).json({ error: preview[0]?.message ?? 'invalid_url' }); return; }
+  const result = commitVendorImport(preview);
+  res.json(sqliteStorage.listVendors().find(vendor => vendor.id === result.results[0]?.id));
+});
+
+app.post('/api/vendors/:id', (req, res) => {
+  const vendor = sqliteStorage.listVendors().find(v => v.id === req.params.id);
+  const counterparty = sqliteStorage.getCounterparty(req.params.id);
+  if (!vendor || !counterparty) { res.status(404).json({ error: 'Not found' }); return; }
+  const name = String((req.body as { name?: string }).name ?? '').trim();
+  const category = String((req.body as { category?: string }).category ?? '').trim();
+  if (!name || !category) { res.status(400).json({ error: 'name and category required' }); return; }
+  sqliteStorage.upsertCounterparty({ ...counterparty, display_name: name, default_category: category });
+  sqliteStorage.saveVendorProfile({ counterparty_id: vendor.id, url: vendor.url, category, source: vendor.source, status: vendor.status });
+  res.json(sqliteStorage.listVendors().find(v => v.id === vendor.id));
 });
 
 app.post('/api/vendors/:id/status', (req, res) => {
-  const vendor = vendorRegistry.find(v => v.id === req.params.id);
+  const vendor = sqliteStorage.listVendors().find(v => v.id === req.params.id);
   if (!vendor) { res.status(404).json({ error: 'Not found' }); return; }
-  vendor.status = req.body.status ?? vendor.status;
-  res.json(vendor);
+  const allowed = new Set(['verified', 'usable', 'pending', 'restricted', 'disabled', 'blocked']);
+  const status = String(req.body.status ?? vendor.status);
+  if (!allowed.has(status)) { res.status(400).json({ error: 'invalid status' }); return; }
+  sqliteStorage.setVendorStatus(vendor.id, status);
+  res.json(sqliteStorage.listVendors().find(v => v.id === vendor.id));
+});
+
+app.post('/api/vendor-import/preview', (req, res) => {
+  const text = String((req.body as { text?: string }).text ?? '');
+  if (!text.trim()) { res.status(400).json({ error: 'text required' }); return; }
+  res.json({ candidates: previewVendorImport(text) });
+});
+
+app.post('/api/vendor-import/commit', (req, res) => {
+  const candidates = (req.body as { candidates?: VendorImportCandidate[] }).candidates;
+  if (!Array.isArray(candidates) || candidates.length === 0) { res.status(400).json({ error: 'candidates required' }); return; }
+  res.json(commitVendorImport(candidates));
+});
+
+app.post('/api/vendor-import/:batchId/undo', (req, res) => {
+  const removed = sqliteStorage.undoVendorImport(req.params.batchId);
+  if (!removed) { res.status(409).json({ error: 'batch not found, already undone, or empty' }); return; }
+  res.json({ batch_id: req.params.batchId, removed, status: 'undone' });
 });
 
 // ─── Approval ────────────────────────────────────────────────────────────────
