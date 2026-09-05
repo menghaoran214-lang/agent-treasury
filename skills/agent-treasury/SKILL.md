@@ -1,7 +1,7 @@
 ---
 name: agent-treasury
 description: "Treasury Skill — tells Agents when/how to use Agent Treasury MCP for purchase requests, approvals, and ledger queries."
-version: 1.0.0
+version: 1.1.0
 platforms: [linux, macos, windows]
 category: finance
 metadata:
@@ -42,6 +42,7 @@ Call `request_purchase` when:
 | `reject_purchase` | Human rejects a pending purchase |
 | `get_receipt` | Get receipt by receipt_id |
 | `get_ledger` | Query ledger entries and stats |
+| `query_accounting` | Run a structured, read-only accounting query after interpreting the user's natural language |
 
 ## Purchase SOP
 
@@ -187,7 +188,16 @@ When user asks:
 - "what did the agent buy?"
 - "show me recent receipts"
 
-Call `get_ledger` or `get_receipt`. Do NOT guess from chat history.
+Interpret the user's natural language, then call `query_accounting`, `get_ledger`, or `get_receipt`. Do NOT require exact trigger phrases and do NOT guess from chat history.
+
+Examples:
+
+- “这个月花了多少？” → `query_accounting { period: "month", metric: "total_spend" }`
+- “BSC 上有几笔？” → `query_accounting { period: "all", metric: "count", chain: "56" }`
+- “Show unusual payments this year” → `query_accounting { period: "year", metric: "anomalies", locale: "en" }`
+- “我给自己小号转过什么？” → `query_accounting { period: "all", metric: "list", internal_only: true }`
+
+`query_accounting` is read-only. Never turn a ledger question into `request_purchase`, approval, policy change, reconciliation, or payment. The host AI may phrase the answer conversationally, but must preserve returned amounts, currencies, statuses, and missing-valuation warnings.
 
 ## Hard Rules (Forbidden Behaviors)
 

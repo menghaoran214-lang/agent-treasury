@@ -75,6 +75,25 @@ JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.
 
 ## MCP Tools
 
+### query_accounting
+
+Read-only structured accounting query for AI hosts. The host interprets free-form
+user language and supplies `period`, `metric`, and optional chain, token,
+category, internal-transfer, quote-currency, and locale filters. The tool returns
+the interpreted constraints, an answer, and matching immutable facts. It cannot
+initiate, approve, retry, or reconcile a payment.
+
+```json
+{
+  "period": "month",
+  "metric": "total_spend",
+  "chain": "56",
+  "token": "USDT",
+  "quote_currency": "USD",
+  "locale": "zh-CN"
+}
+```
+
 ### request_purchase
 
 **Purpose**: Submit a new purchase request. The core entry point.

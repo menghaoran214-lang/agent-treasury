@@ -15,7 +15,7 @@ Last synchronized: 2026-09-05
 
 ### Gate 2 — MCP + SQLite
 
-- [x] Eight MCP tools over stdio
+- [x] Nine MCP tools over stdio, including read-only structured accounting queries
 - [x] External request, approval, receipt, and ledger flows
 - [x] SQLite persistence and explicit database path
 - [x] Formal MCP DTOs
@@ -76,6 +76,7 @@ Last synchronized: 2026-09-05
 - [x] Monthly, yearly, and all-time reports with real trends, categories, and counterparties
 - [x] Project, chain, token, and anomaly report dimensions
 - [x] Deterministic read-only natural-language accounting queries in Chinese and English
+- [x] Host AI routing contract from free-form language to structured read-only MCP accounting queries
 
 ### Gate 8 — One-Click Productization
 

@@ -11,6 +11,15 @@ export interface AccountingQueryResult {
   entries: Array<{ receiptId: string; purchaseId: string; counterparty: string; purpose: string; amount: number; currency: string; status: string; createdAt: string; chain: string | null; token: string; category: string; project: string; internal: boolean }>;
 }
 
+export interface AccountingQueryIntent {
+  period?: 'month' | 'year' | 'all';
+  metric?: QueryMetric;
+  chain?: string | null;
+  token?: string | null;
+  category?: string | null;
+  internalOnly?: boolean;
+}
+
 export function queryAccounting(
   entries: EnrichedEntry[], query: string, quoteCurrency: string,
   getSnapshot: (purchaseId: string) => ValuationSnapshot | null,
@@ -30,6 +39,22 @@ export function queryAccounting(
   const category = /市场数据|行情数据|market[_ ]data/.test(normalized) ? 'market_data' : null;
   const internalMentioned = /内部转账|自己.*转账|internal transfer/.test(normalized);
   const internalOnly = internalMentioned && !/排除|不含|除外|exclude|without/.test(normalized);
+  return queryAccountingByIntent(entries, { period, metric, chain, token, category, internalOnly }, quoteCurrency,
+    getSnapshot, getPayment, now, locale, query);
+}
+
+export function queryAccountingByIntent(
+  entries: EnrichedEntry[], intent: AccountingQueryIntent, quoteCurrency: string,
+  getSnapshot: (purchaseId: string) => ValuationSnapshot | null,
+  getPayment: (purchaseId: string) => PaymentContext = () => null,
+  now = new Date(), locale: 'zh-CN' | 'en' = 'zh-CN', query = '',
+): AccountingQueryResult {
+  const period = intent.period ?? 'month';
+  const metric = intent.metric ?? 'list';
+  const chain = intent.chain ?? null;
+  const token = intent.token?.toUpperCase() ?? null;
+  const category = intent.category ?? null;
+  const internalOnly = intent.internalOnly ?? false;
   const startsAt = period === 'month' ? new Date(now.getFullYear(), now.getMonth(), 1)
     : period === 'year' ? new Date(now.getFullYear(), 0, 1) : null;
 

@@ -5,6 +5,7 @@ import { sqliteStorage } from '../storage/index.js';
 import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
 import type { Policy, PurchaseRequest, ProviderOffer } from '../domain/types.js';
 import { runTreasury } from '../runtime/treasury.js';
+import { queryAccountingByIntent } from '../runtime/accountingQuery.js';
 
 // ponytail: TEST ONLY — test/e2e fixtures isolated from production vendor logic
 // Production server: NEVER import from tests/fixtures/
@@ -48,6 +49,16 @@ const ApprovePurchaseSchema = z.object({ purchase_id: z.string(), reason: z.stri
 const RejectPurchaseSchema = z.object({ purchase_id: z.string(), reason: z.string().optional() });
 const GetReceiptSchema = z.object({ receipt_id: z.string() });
 const GetLedgerSchema = z.object({ requester: z.string().optional(), limit: z.number().optional() });
+const QueryAccountingSchema = z.object({
+  period: z.enum(['month', 'year', 'all']).optional(),
+  metric: z.enum(['total_spend', 'count', 'top_counterparties', 'anomalies', 'list']).optional(),
+  chain: z.string().min(1).optional(),
+  token: z.string().min(1).optional(),
+  category: z.string().min(1).optional(),
+  internal_only: z.boolean().optional(),
+  quote_currency: z.enum(['USD', 'USDC', 'USDT', 'BTC']).optional(),
+  locale: z.enum(['zh-CN', 'en']).optional(),
+});
 
 type RequestPurchase = z.infer<typeof RequestPurchaseSchema>;
 type ProposePolicyChange = z.infer<typeof ProposePolicyChangeSchema>;
@@ -358,6 +369,38 @@ server.registerTool('get_ledger', {
     ? allEntries.filter(e => e.receipt.requester === args.requester).slice(0, limit)
     : allEntries.slice(0, limit);
   return { content: [{ type: 'text', text: JSON.stringify({ entries, stats: sqliteStorage.stats() }, null, 2) }] };
+});
+
+// ─── Tool: query_accounting ──────────────────────────────────────────────────
+
+server.registerTool('query_accounting', {
+  description: 'Read-only structured accounting query. Use after the host AI interprets the user\'s natural-language request. Never initiates or approves a payment.',
+  inputSchema: {
+    period: z.enum(['month', 'year', 'all']).optional(),
+    metric: z.enum(['total_spend', 'count', 'top_counterparties', 'anomalies', 'list']).optional(),
+    chain: z.string().min(1).optional(),
+    token: z.string().min(1).optional(),
+    category: z.string().min(1).optional(),
+    internal_only: z.boolean().optional(),
+    quote_currency: z.enum(['USD', 'USDC', 'USDT', 'BTC']).optional(),
+    locale: z.enum(['zh-CN', 'en']).optional(),
+  },
+}, async (args) => {
+  const parsed = QueryAccountingSchema.safeParse(args);
+  if (!parsed.success) {
+    return { content: [{ type: 'text', text: JSON.stringify({ error: 'INVALID_REQUEST', detail: parsed.error.message }) }] };
+  }
+  const input = parsed.data;
+  const quote = input.quote_currency ?? sqliteStorage.getPreferences().quote_currency;
+  const result = queryAccountingByIntent(sqliteStorage.getAllEntries(), {
+    period: input.period,
+    metric: input.metric,
+    chain: input.chain,
+    token: input.token,
+    category: input.category,
+    internalOnly: input.internal_only,
+  }, quote, id => sqliteStorage.getValuationSnapshot(id, 'USD'), id => sqliteStorage.getPaymentRecord(id), new Date(), input.locale ?? 'zh-CN');
+  return { content: [{ type: 'text', text: JSON.stringify({ read_only: true, ...result }, null, 2) }] };
 });
 
 // ─── Start ─────────────────────────────────────────────────────────────────────

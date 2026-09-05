@@ -76,9 +76,9 @@ async function scene1_listTools() {
   const result = await send({ jsonrpc: '2.0', id: id++, method: 'tools/list' }) as { tools: Array<{ name: string }> };
   const tools = result.tools;
   console.log(`  Tools: ${tools.map(t => t.name).join(', ')}`);
-  const required = ['request_purchase', 'get_purchase_status', 'get_policy', 'propose_policy_change', 'approve_purchase', 'reject_purchase', 'get_receipt', 'get_ledger'];
+  const required = ['request_purchase', 'get_purchase_status', 'get_policy', 'propose_policy_change', 'approve_purchase', 'reject_purchase', 'get_receipt', 'get_ledger', 'query_accounting'];
   const allPresent = required.every(n => tools.some(t => t.name === n));
-  console.log(`  [${allPresent ? 'PASS' : 'FAIL'}] listTools → ${tools.length}/8 tools present`);
+  console.log(`  [${allPresent ? 'PASS' : 'FAIL'}] listTools → ${tools.length}/9 tools present`);
   return allPresent;
 }
 
@@ -202,6 +202,20 @@ async function scene10_invalidInput(): Promise<boolean> {
   return ok;
 }
 
+async function scene11_queryAccounting(): Promise<boolean> {
+  const before = await callTool('get_ledger', { limit: 50 });
+  const r = await callTool('query_accounting', {
+    period: 'all', metric: 'total_spend', category: 'market_data', quote_currency: 'USD', locale: 'en',
+  });
+  const after = await callTool('get_ledger', { limit: 50 });
+  const beforeCount = (before.entries as unknown[])?.length ?? 0;
+  const afterCount = (after.entries as unknown[])?.length ?? 0;
+  const ok = r.read_only === true && (r.interpretation as Record<string, unknown>)?.metric === 'total_spend'
+    && (r.answer as Record<string, unknown>)?.currency === 'USD' && beforeCount === afterCount;
+  console.log(`  [${ok ? 'PASS' : 'FAIL'}] Scene 11: structured accounting query is read-only`);
+  return ok;
+}
+
 async function main() {
   console.log('=== Treasury MCP E2E ===\n');
 
@@ -270,6 +284,9 @@ async function main() {
   // Scene 10: Invalid input
   try { const ok = await scene10_invalidInput(); results.push(['Scene 10: Invalid input', ok]); if (ok) passed++; }
   catch (e) { console.error('[ERR]', e); results.push(['Scene 10: Invalid input', false]); }
+
+  try { const ok = await scene11_queryAccounting(); results.push(['Scene 11: Read-only accounting query', ok]); if (ok) passed++; }
+  catch (e) { console.error('[ERR]', e); results.push(['Scene 11: Read-only accounting query', false]); }
 
   // Persistence restart test
   console.log('\n--- Persistence Restart ---');

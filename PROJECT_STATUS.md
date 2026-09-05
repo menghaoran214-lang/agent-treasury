@@ -27,7 +27,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 ## What Is Real Today
 
 - Treasury selection, value scoring, fair-price, security, policy, approval, receipt, and ledger logic.
-- Eight MCP tools over stdio.
+- Nine MCP tools over stdio, including structured read-only accounting queries for AI hosts.
 - SQLite persistence for purchases, receipts, ledger entries, policy, and payment state.
 - Treasury Skill instructions for agent behavior.
 - Mock payment end-to-end demo.
@@ -40,7 +40,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Searchable and filterable ledger with an immutable-fact/accounting detail drawer.
 - Month, year, and all-time reports derived from persisted entries, including real trends, categories, counterparties, and internal-transfer exclusion.
 - Project, payment-chain, token, and anomaly report dimensions, with editable project assignment from the ledger.
-- Deterministic Chinese/English natural-language accounting queries with explicit read-only interpretation and matching details.
+- Deterministic Chinese/English natural-language accounting queries in the demo UI, plus a host-oriented structured read-only MCP query tool.
 
 ## What Is Not Yet Production-Ready
 
@@ -64,10 +64,9 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Refine accounting classification history and expose it in the ledger detail.
-2. Split WalletAdapter from PaymentRail and formalize extension interfaces.
-3. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
-4. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
+1. Split WalletAdapter from PaymentRail and formalize extension interfaces.
+2. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+3. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 
 ## Known Technical Debt
 
