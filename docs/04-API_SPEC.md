@@ -58,6 +58,17 @@
   updates the payment, purchase, receipt, and ledger atomically and emits an
   audited Treasury event. It never sends or retries a payment.
 
+## Natural-language accounting
+
+- `POST /api/accounting/query` accepts a 1–500 character Chinese or English
+  accounting question plus optional quote currency and locale.
+- The deterministic read-only interpreter supports month/year/all-time scope,
+  total spend, record count, top counterparties, anomaly review, BSC, token,
+  market-data, and internal-transfer intent.
+- Results include the interpreted constraints, a concise answer, and matching
+  immutable transaction facts. Spend answers exclude blocked, failed, and
+  internal-transfer entries. This endpoint cannot initiate payment.
+
 ## Transport
 
 JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.

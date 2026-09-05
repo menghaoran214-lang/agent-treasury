@@ -75,7 +75,7 @@ Last synchronized: 2026-09-05
 - [x] Ledger search and filters plus a transaction-fact/accounting detail drawer
 - [x] Monthly, yearly, and all-time reports with real trends, categories, and counterparties
 - [x] Project, chain, token, and anomaly report dimensions
-- [ ] Natural-language accounting queries
+- [x] Deterministic read-only natural-language accounting queries in Chinese and English
 
 ### Gate 8 — One-Click Productization
 

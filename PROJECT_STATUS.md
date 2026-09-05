@@ -40,6 +40,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Searchable and filterable ledger with an immutable-fact/accounting detail drawer.
 - Month, year, and all-time reports derived from persisted entries, including real trends, categories, counterparties, and internal-transfer exclusion.
 - Project, payment-chain, token, and anomaly report dimensions, with editable project assignment from the ledger.
+- Deterministic Chinese/English natural-language accounting queries with explicit read-only interpretation and matching details.
 
 ## What Is Not Yet Production-Ready
 
@@ -63,7 +64,7 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Add natural-language accounting queries and refine classification history.
+1. Refine accounting classification history and expose it in the ledger detail.
 2. Split WalletAdapter from PaymentRail and formalize extension interfaces.
 3. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
 4. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.

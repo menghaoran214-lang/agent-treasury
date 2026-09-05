@@ -53,5 +53,6 @@ accounting slice are complete. Ledger search/filtering, transaction detail, and
 month/year/all-time reports now use persisted facts and valuation snapshots.
 P0 payment safety is complete, including operator reconciliation for UNKNOWN
 payments without automatic retry. Project, payment-chain, token, and anomaly
-dimensions are also available in the real report. The next accounting slice is
-natural-language queries and richer classification history.
+dimensions and deterministic natural-language queries are also available in the
+real report. The next slice is richer classification history followed by the
+WalletAdapter/PaymentRail extension boundary.

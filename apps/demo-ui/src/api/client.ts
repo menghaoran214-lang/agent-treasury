@@ -134,6 +134,17 @@ export const reportApi = {
   get: (period: AccountingReport['period'], quote?: string) => get<AccountingReport>(`/reports?period=${period}${quote ? `&quote=${encodeURIComponent(quote)}` : ''}`),
 };
 
+export interface AccountingQueryResult {
+  query: string;
+  interpretation: { period: 'month' | 'year' | 'all'; metric: string; chain: string | null; token: string | null; category: string | null; internalOnly: boolean; excludesInternal: boolean };
+  answer: { text: string; value: number | null; currency: string | null; missingValuations: number };
+  entries: Array<{ receiptId: string; purchaseId: string; counterparty: string; purpose: string; amount: number; currency: string; status: string; createdAt: string; chain: string | null; token: string; category: string; project: string; internal: boolean }>;
+}
+
+export const accountingQueryApi = {
+  ask: (query: string, quote: QuoteCurrency, locale: 'zh-CN' | 'en') => post<AccountingQueryResult>('/accounting/query', { query, quote, locale }),
+};
+
 export const counterpartyApi = {
   upsert: (counterparty: Omit<Counterparty, 'created_at' | 'updated_at'>) => post<Counterparty>('/counterparties', counterparty),
 };

@@ -17,6 +17,7 @@ import { PurchaseStrategy, CounterpartyType } from '../domain/types.js';
 import type { Policy } from '../domain/types.js';
 import { previewVendorImport, commitVendorImport, type VendorImportCandidate } from '../runtime/vendorImport.js';
 import { buildAccountingReport, type ReportPeriod } from '../runtime/reporting.js';
+import { queryAccounting } from '../runtime/accountingQuery.js';
 
 const app = express();
 app.use(express.json());
@@ -268,6 +269,16 @@ app.get('/api/reports', (_req, res) => {
   const quote = String(_req.query.quote ?? sqliteStorage.getPreferences().quote_currency).toUpperCase();
   res.json(buildAccountingReport(sqliteStorage.getAllEntries(), period, quote,
     id => sqliteStorage.getValuationSnapshot(id, 'USD'), id => sqliteStorage.getPaymentRecord(id)));
+});
+
+app.post('/api/accounting/query', (req, res) => {
+  const query = String((req.body as { query?: string }).query ?? '').trim();
+  if (!query || query.length > 500) { res.status(400).json({ error: 'query must contain 1-500 characters' }); return; }
+  const requestedQuote = String((req.body as { quote?: string }).quote ?? sqliteStorage.getPreferences().quote_currency).toUpperCase();
+  const quote = ['USD', 'USDC', 'USDT', 'BTC'].includes(requestedQuote) ? requestedQuote : sqliteStorage.getPreferences().quote_currency;
+  const locale = (req.body as { locale?: string }).locale === 'en' ? 'en' : 'zh-CN';
+  res.json(queryAccounting(sqliteStorage.getAllEntries(), query, quote,
+    id => sqliteStorage.getValuationSnapshot(id, 'USD'), id => sqliteStorage.getPaymentRecord(id), new Date(), locale));
 });
 
 const counterpartyTypes = new Set(Object.values(CounterpartyType));

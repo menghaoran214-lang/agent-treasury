@@ -72,6 +72,8 @@ The UI polls persistent Treasury events while the page is open. Notification mod
   `UNKNOWN` payments, requires wallet/explorer verification, a conclusion and
   operator note, and shows append-only history after resolution.
 - Browser UI notifications require the Agent Treasury page to be open. Windows system notifications belong to Gate 8 productization.
+- Analytics includes an “Ask the Ledger” read-only query surface with suggested
+  questions, a plain-language answer, and matching transaction details.
 - Judge Demo reset is namespace-scoped (`judge-demo-*`) and must never clear real purchases, receipts, payments, or ledger entries.
 - Green = auto-approved, Yellow = human review, Red = blocked
 - Monospace numbers for amounts
