@@ -5,7 +5,7 @@
  */
 // @ts-ignore -- esModuleInterop + bundler moduleResolution causes false positive on .d.cts
 import Database from 'better-sqlite3';
-import type { Receipt, LedgerEntry, Policy, Counterparty, CounterpartyType, AccountingMetadata, AccountingRevision } from '../domain/types.js';
+import type { Receipt, LedgerEntry, Policy, Counterparty, CounterpartyType, AccountingMetadata, AccountingRevision, ValuationSnapshot, UserPreferences } from '../domain/types.js';
 import { getDatabasePath } from '../config/runtimeConfig.js';
 
 const _db = (() => {
@@ -154,7 +154,30 @@ const _db = (() => {
     created_at TEXT NOT NULL,
     undone_at TEXT
   );
+  CREATE TABLE IF NOT EXISTS valuation_snapshots (
+    purchase_id TEXT NOT NULL,
+    quote_currency TEXT NOT NULL,
+    original_amount REAL NOT NULL,
+    original_currency TEXT NOT NULL,
+    fx_rate REAL NOT NULL,
+    quote_amount REAL NOT NULL,
+    source TEXT NOT NULL,
+    captured_at TEXT NOT NULL,
+    PRIMARY KEY (purchase_id, quote_currency)
+  );
+  CREATE TABLE IF NOT EXISTS user_preferences (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
+  (db as unknown as { exec(s: string): void }).exec(`
+    INSERT OR IGNORE INTO valuation_snapshots
+      (purchase_id, quote_currency, original_amount, original_currency, fx_rate, quote_amount, source, captured_at)
+    SELECT purchase_id, 'USD', amount, upper(currency), 1.0, amount, 'stablecoin_parity_v1', created_at
+    FROM ledger_entries
+    WHERE status = 'completed' AND upper(currency) IN ('USD','USDC','USDT')
+  `);
   const paymentColumns = new Set(((db as unknown as { prepare(s: string): { all(): Array<{ name: string }> } }).prepare('PRAGMA table_info(payment_records)').all()).map(c => c.name));
   const routeColumns: Record<string, string> = {
     route_fingerprint: 'TEXT', chain_id: 'TEXT', token_symbol: 'TEXT', token_address: 'TEXT', recipient: 'TEXT',
@@ -308,6 +331,11 @@ export const sqliteStorage = {
       receipt_json: JSON.stringify(entry),
       created_at: entry.receipt.created_at,
     });
+    if (entry.receipt.status === 'completed' && ['USD', 'USDC', 'USDT'].includes(entry.receipt.currency.toUpperCase())) {
+      this.saveValuationSnapshot({ purchase_id: purchaseId, original_amount: entry.receipt.amount,
+        original_currency: entry.receipt.currency.toUpperCase(), quote_currency: 'USD', fx_rate: 1,
+        quote_amount: entry.receipt.amount, source: 'stablecoin_parity_v1', captured_at: entry.receipt.created_at });
+    }
   },
 
   getAllEntries(): Array<LedgerEntry & { accounting?: AccountingMetadata; counterparty?: Counterparty }> {
@@ -335,7 +363,7 @@ export const sqliteStorage = {
     }).filter(Boolean) as Array<LedgerEntry & { accounting?: AccountingMetadata; counterparty?: Counterparty }>;
   },
 
-  stats() {
+  stats(quoteCurrency = 'USD') {
     const purchases = (_db.prepare('SELECT COUNT(*) as c FROM purchases').get() as { c: number }).c;
     const completed = (_db.prepare("SELECT COUNT(*) as c FROM purchases WHERE status = 'completed'").get() as { c: number }).c;
     const pending = (_db.prepare("SELECT COUNT(*) as c FROM purchases WHERE status = 'pending'").get() as { c: number }).c;
@@ -344,7 +372,38 @@ export const sqliteStorage = {
     const totalSpend = (_db.prepare(`SELECT SUM(l.amount) as s FROM ledger_entries l LEFT JOIN accounting_metadata a ON a.purchase_id = l.purchase_id WHERE ${spendWhere}`).get() as { s: number | null }).s ?? 0;
     const totalsByCurrency = Object.fromEntries((_db.prepare(`SELECT l.currency, SUM(l.amount) AS amount FROM ledger_entries l LEFT JOIN accounting_metadata a ON a.purchase_id = l.purchase_id WHERE ${spendWhere} GROUP BY l.currency ORDER BY l.currency`).all() as Array<{ currency: string; amount: number }>).map(row => [row.currency, row.amount]));
     const internalTransfers = (_db.prepare("SELECT COUNT(*) AS c FROM accounting_metadata WHERE is_internal_transfer = 1").get() as { c: number }).c;
-    return { purchases, completed, pending, ledger, totalSpend, totalsByCurrency, internalTransfers, totalCount: ledger };
+    const eligible = (_db.prepare(`SELECT COUNT(*) AS c FROM ledger_entries l LEFT JOIN accounting_metadata a ON a.purchase_id=l.purchase_id WHERE ${spendWhere}`).get() as { c: number }).c;
+    const supportedQuote = ['USD', 'USDC', 'USDT'].includes(quoteCurrency.toUpperCase());
+    const valuationRow = supportedQuote ? _db.prepare(`SELECT COUNT(v.purchase_id) AS covered, SUM(v.quote_amount) AS total
+      FROM ledger_entries l LEFT JOIN accounting_metadata a ON a.purchase_id=l.purchase_id
+      LEFT JOIN valuation_snapshots v ON v.purchase_id=l.purchase_id AND v.quote_currency='USD'
+      WHERE ${spendWhere}`).get() as { covered: number; total: number | null } : { covered: 0, total: null };
+    const missing = Math.max(0, eligible - valuationRow.covered);
+    const valuation = { quoteCurrency: quoteCurrency.toUpperCase(), total: missing === 0 ? (valuationRow.total ?? 0) : null,
+      coveredCount: valuationRow.covered, missingCount: missing, complete: missing === 0, source: supportedQuote ? 'stored_usd_snapshots' : 'rate_unavailable' };
+    return { purchases, completed, pending, ledger, totalSpend, totalsByCurrency, internalTransfers, valuation, totalCount: ledger };
+  },
+
+  saveValuationSnapshot(snapshot: ValuationSnapshot): void {
+    _db.prepare(`INSERT OR IGNORE INTO valuation_snapshots
+      (purchase_id,quote_currency,original_amount,original_currency,fx_rate,quote_amount,source,captured_at)
+      VALUES (:purchase_id,:quote_currency,:original_amount,:original_currency,:fx_rate,:quote_amount,:source,:captured_at)`).run(snapshot);
+  },
+
+  getValuationSnapshot(purchaseId: string, quoteCurrency = 'USD'): ValuationSnapshot | null {
+    return (_db.prepare('SELECT * FROM valuation_snapshots WHERE purchase_id=? AND quote_currency=?').get(purchaseId, quoteCurrency) as ValuationSnapshot | undefined) ?? null;
+  },
+
+  getPreferences(): UserPreferences {
+    const row = _db.prepare("SELECT value FROM user_preferences WHERE key='quote_currency'").get() as { value: string } | undefined;
+    const value = row?.value;
+    return { quote_currency: (['USD', 'USDC', 'USDT', 'BTC'].includes(value ?? '') ? value : 'USD') as UserPreferences['quote_currency'] };
+  },
+
+  savePreferences(preferences: UserPreferences): UserPreferences {
+    _db.prepare(`INSERT INTO user_preferences (key,value,updated_at) VALUES ('quote_currency',?,?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`).run(preferences.quote_currency, new Date().toISOString());
+    return this.getPreferences();
   },
 
   upsertCounterparty(input: Omit<Counterparty, 'created_at' | 'updated_at'>): Counterparty {

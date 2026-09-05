@@ -26,6 +26,15 @@
 - `POST /api/vendors/:id` edits the persisted display name and category after
   import; the linked Counterparty revision provides an audit trail.
 
+## Valuation and preferences
+
+- `GET /api/preferences` returns the persistent quote currency.
+- `POST /api/preferences` accepts USD, USDC, USDT, or BTC.
+- `GET /api/ledger?quote=USD` returns a `stats.valuation` object with total,
+  coverage, missing count, completeness, and source. USD/USDC/USDT use stored
+  stablecoin USD snapshots. BTC without a configured rate returns `total: null`
+  instead of a fabricated conversion.
+
 ## Transport
 
 JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.

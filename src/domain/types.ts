@@ -111,6 +111,21 @@ export interface AccountingRevision {
   created_at: string;
 }
 
+export interface ValuationSnapshot {
+  purchase_id: string;
+  original_amount: number;
+  original_currency: string;
+  quote_currency: string;
+  fx_rate: number;
+  quote_amount: number;
+  source: string;
+  captured_at: string;
+}
+
+export interface UserPreferences {
+  quote_currency: 'USD' | 'USDC' | 'USDT' | 'BTC';
+}
+
 // Result returned by PaymentProvider.execute() — includes explicit payment state
 export interface PaymentProviderResult {
   success: boolean;

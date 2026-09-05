@@ -36,6 +36,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Immediate Simplified Chinese / English switching across all functional UI copy.
 - V2 counterparties, editable accounting metadata, audit history, and internal-transfer exclusion from spend totals.
 - Persistent vendor profiles with preview-first batch import, deduplication, post-import editing, partial-result reporting, and scoped undo.
+- Immutable transaction-time valuation snapshots and persistent USD/USDC/USDT/BTC quote preference with explicit missing-rate handling.
 
 ## What Is Not Yet Production-Ready
 

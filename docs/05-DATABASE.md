@@ -23,6 +23,14 @@ ownership to a Counterparty. `vendor_import_batches` stores the complete per-row
 result and undo state. A batch undo only deletes profiles created by that batch;
 counterparties already referenced by accounting records are preserved.
 
+`valuation_snapshots` stores original amount/currency, quote currency, FX rate,
+quote amount, source, and capture time. Its composite primary key makes a stored
+transaction-time valuation immutable. Existing completed USD/USDC/USDT entries
+receive a USD snapshot from the explicit `stablecoin_parity_v1` policy.
+
+`user_preferences` currently persists the selected quote currency. This changes
+presentation and aggregation only; it never rewrites original transaction facts.
+
 ## Storage Engine
 
 SQLite via `better-sqlite3`. DB path configured via `TREASURY_DB_PATH` env var (default: `./data/treasury.db`).

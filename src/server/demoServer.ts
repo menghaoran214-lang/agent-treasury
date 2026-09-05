@@ -224,11 +224,21 @@ app.get('/api/ledger', async (_req, res) => {
   try {
     const { ledger } = await import('../runtime/ledger.js') as { ledger: any };
     const entries = ledger.all();
-    const stats = ledger.stats();
+    const requestedQuote = String(_req.query.quote ?? sqliteStorage.getPreferences().quote_currency).toUpperCase();
+    const quote = ['USD', 'USDC', 'USDT', 'BTC'].includes(requestedQuote) ? requestedQuote : 'USD';
+    const stats = ledger.stats(quote);
     res.json({ entries, stats });
   } catch {
     res.status(500).json({ error: 'Failed to load ledger' });
   }
+});
+
+app.get('/api/preferences', (_req, res) => res.json(sqliteStorage.getPreferences()));
+
+app.post('/api/preferences', (req, res) => {
+  const quote = String((req.body as { quote_currency?: string }).quote_currency ?? '').toUpperCase();
+  if (!['USD', 'USDC', 'USDT', 'BTC'].includes(quote)) { res.status(400).json({ error: 'unsupported quote currency' }); return; }
+  res.json(sqliteStorage.savePreferences({ quote_currency: quote as 'USD' | 'USDC' | 'USDT' | 'BTC' }));
 });
 
 const counterpartyTypes = new Set(Object.values(CounterpartyType));

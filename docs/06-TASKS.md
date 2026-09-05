@@ -71,7 +71,7 @@ Last synchronized: 2026-09-05
 - [x] Audited edits for aliases, categories, tags, notes, projects, and cost centers
 - [x] Internal-transfer classification excluded from consumption statistics by default
 - [x] Supplier import preview, deduplication, editable naming, partial-result reporting, and batch undo
-- [ ] Multi-currency display with original asset, quote currency, and FX snapshot
+- [x] Multi-currency display with original asset, persistent quote currency, immutable FX snapshot, and missing-rate safety
 - [ ] Refined ledger details, monthly/yearly reports, and natural-language queries
 
 ### Gate 8 — One-Click Productization

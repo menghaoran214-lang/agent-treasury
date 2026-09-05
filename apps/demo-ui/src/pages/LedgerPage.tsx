@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { t, i18n } from '../i18n';
-import { ledgerApi, counterpartyApi, LedgerEntry, LedgerStats } from '../api/client';
+import { ledgerApi, counterpartyApi, preferenceApi, LedgerEntry, LedgerStats, QuoteCurrency } from '../api/client';
 
 interface Props { onViewReceipt: (receiptId: string) => void; }
 
@@ -9,10 +9,14 @@ export default function LedgerPage({ onViewReceipt }: Props) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [quoteCurrency, setQuoteCurrency] = useState<QuoteCurrency>('USD');
 
   useEffect(() => {
-    ledgerApi.get()
-      .then(d => setData(d))
+    preferenceApi.get().then(async prefs => {
+      setQuoteCurrency(prefs.quote_currency);
+      return ledgerApi.get(prefs.quote_currency);
+    })
+      .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
@@ -21,7 +25,6 @@ export default function LedgerPage({ onViewReceipt }: Props) {
 
   const entries = data?.entries ?? [];
   const stats = data?.stats;
-  const currencyTotals = stats ? Object.entries(stats.totalsByCurrency ?? {}) : [];
 
   async function saveAccounting() {
     if (!editing) return;
@@ -36,7 +39,7 @@ export default function LedgerPage({ onViewReceipt }: Props) {
         counterparty_id: counterpartyId, category: editing.category, note: editing.note,
         is_internal_transfer: editing.internal, include_in_spend: !editing.internal,
       });
-      setData(await ledgerApi.get());
+      setData(await ledgerApi.get(quoteCurrency));
       setEditing(null);
     } finally { setSaving(false); }
   }
@@ -49,12 +52,16 @@ export default function LedgerPage({ onViewReceipt }: Props) {
       {stats && (
         <div className="grid-3" style={{ marginBottom: 24 }}>
           <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--mono)', color: 'var(--green)' }}>
-              {currencyTotals.length > 0
-                ? currencyTotals.map(([currency, amount]) => `${Number(amount).toFixed(2)} ${currency}`).join(' + ')
-                : '0.00 —'}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--mono)', color: stats.valuation.complete ? 'var(--green)' : 'var(--yellow)' }}>
+                {stats.valuation.total == null ? '—' : stats.valuation.total.toFixed(2)}
+              </span>
+              <select className="form-select" aria-label={t('ledger.quoteCurrency')} style={{ width: 92, padding: '6px 8px' }} value={quoteCurrency} onChange={async e => {
+                const quote = e.target.value as QuoteCurrency; setQuoteCurrency(quote); await preferenceApi.update(quote); setData(await ledgerApi.get(quote));
+              }}>{(['USD','USDC','USDT','BTC'] as QuoteCurrency[]).map(currency => <option key={currency}>{currency}</option>)}</select>
             </div>
             <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{t('ledger.totalSpend')}</div>
+            {!stats.valuation.complete && <div style={{ fontSize: 11, color: 'var(--yellow)', marginTop: 4 }}>{t('ledger.valuationMissing').replace('{n}', String(stats.valuation.missingCount))}</div>}
           </div>
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--mono)' }}>{stats.completed}</div>

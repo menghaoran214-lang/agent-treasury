@@ -102,6 +102,7 @@ export interface LedgerStats {
   totalSpend: number;
   totalsByCurrency: Record<string, number>;
   totalCount: number;
+  valuation: { quoteCurrency: string; total: number | null; coveredCount: number; missingCount: number; complete: boolean; source: string };
 }
 
 export interface LedgerResponse {
@@ -110,8 +111,14 @@ export interface LedgerResponse {
 }
 
 export const ledgerApi = {
-  get: (filter?: object) => get<LedgerResponse>('/ledger' + (filter ? '?filter=' + encodeURIComponent(JSON.stringify(filter)) : '')),
+  get: (quoteCurrency?: string) => get<LedgerResponse>('/ledger' + (quoteCurrency ? `?quote=${encodeURIComponent(quoteCurrency)}` : '')),
   updateAccounting: (purchaseId: string, patch: Partial<AccountingMetadata>) => post<{ metadata: AccountingMetadata; history: unknown[] }>(`/ledger/${purchaseId}/accounting`, patch),
+};
+
+export type QuoteCurrency = 'USD' | 'USDC' | 'USDT' | 'BTC';
+export const preferenceApi = {
+  get: () => get<{ quote_currency: QuoteCurrency }>('/preferences'),
+  update: (quote_currency: QuoteCurrency) => post<{ quote_currency: QuoteCurrency }>('/preferences', { quote_currency }),
 };
 
 export const counterpartyApi = {

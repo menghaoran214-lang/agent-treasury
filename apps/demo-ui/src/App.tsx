@@ -12,7 +12,7 @@ import ReportsPage from './pages/ReportsPage';
 import ToastContainer from './components/ToastContainer';
 import ApprovalModal from './components/ApprovalModal';
 import ExceptionModal from './components/ExceptionModal';
-import { eventApi, type TreasuryEvent } from './api/client';
+import { eventApi, ledgerApi, policyApi, type TreasuryEvent } from './api/client';
 
 export type Page = 'setup' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
 
@@ -76,6 +76,7 @@ export default function App() {
     receiptId: receiptFromHash(),
     setupDone: localStorage.getItem('treasury-setup-done') === '1',
   });
+  const [budgetSummary, setBudgetSummary] = useState({ spent: 0 as number | null, quote: 'USD', budgetCurrency: 'USD', monthly: 100, autoPay: 1 });
 
   // Lang re-render trigger
   const [, rerender] = useState(0);
@@ -92,6 +93,14 @@ export default function App() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    Promise.all([ledgerApi.get(), policyApi.get()]).then(([ledger, policy]) => setBudgetSummary({
+      spent: ledger.stats.valuation.total, quote: ledger.stats.valuation.quoteCurrency,
+      budgetCurrency: ledger.stats.valuation.quoteCurrency === 'BTC' ? 'USD' : ledger.stats.valuation.quoteCurrency,
+      monthly: policy.monthly_budget, autoPay: policy.auto_pay_limit,
+    })).catch(() => {});
+  }, [state.page]);
 
   useEffect(() => {
     const seen = new Set<string>(JSON.parse(localStorage.getItem('treasury-seen-events') || '[]'));
@@ -202,9 +211,9 @@ export default function App() {
           </nav>
           <div className="sidebar-budget">
             <span>{i18n.t('v2.sidebar.monthlyBudget')}</span>
-            <strong>8.40 <small>/ 100 USDC</small></strong>
-            <div className="budget-track"><i /></div>
-            <span>{i18n.t('v2.sidebar.autoPayLimit')} <b>1.00 USDC</b></span>
+            <strong>{budgetSummary.spent == null ? `— ${budgetSummary.quote}` : budgetSummary.spent.toFixed(2)} <small>/ {budgetSummary.monthly.toFixed(0)} {budgetSummary.budgetCurrency}</small></strong>
+            <div className="budget-track"><i style={{ width: `${budgetSummary.spent == null ? 0 : Math.min(100, budgetSummary.spent / Math.max(1, budgetSummary.monthly) * 100)}%` }} /></div>
+            <span>{i18n.t('v2.sidebar.autoPayLimit')} <b>{budgetSummary.autoPay.toFixed(2)} {budgetSummary.budgetCurrency}</b></span>
           </div>
           <div className="sidebar-footer"><span className="status-dot" /> {i18n.t('v2.sidebar.online')}</div>
         </aside>

@@ -47,7 +47,7 @@ mode requires them.
 ## Current Slice
 
 The argument-only Windows→WSL wallet bridge, simulated uncertainty handling,
-P1 Counterparties/accounting metadata boundary, and P2 preview-first vendor
-import are complete. The remaining P0 item is operator reconciliation for
-UNKNOWN payments. The next product slice is P3 original-asset/quote-currency/FX
-snapshot handling followed by the refined ledger and reports.
+P1 Counterparties/accounting metadata boundary, P2 preview-first vendor import,
+and P3 original-asset/quote-currency/FX snapshot handling are complete. The
+remaining P0 item is operator reconciliation for UNKNOWN payments. The next
+product slice is the refined ledger detail and monthly/yearly reports.

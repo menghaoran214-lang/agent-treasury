@@ -121,6 +121,8 @@
   "ledger": {
     "title": "Ledger",
     "totalSpend": "Total Spend",
+    "quoteCurrency": "Unified quote currency",
+    "valuationMissing": "{n} transaction(s) lack a reliable FX rate and are excluded from the unified valuation",
     "completed": "Completed",
     "pendingApproval": "Pending Approval",
     "blocked": "Blocked",

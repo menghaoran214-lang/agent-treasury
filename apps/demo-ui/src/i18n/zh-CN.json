@@ -121,6 +121,8 @@
   "ledger": {
     "title": "账单",
     "totalSpend": "总支出",
+    "quoteCurrency": "统一计价单位",
+    "valuationMissing": "{n} 笔交易缺少可靠汇率，未纳入统一估值",
     "completed": "已完成",
     "pendingApproval": "待审批",
     "blocked": "已拦截",

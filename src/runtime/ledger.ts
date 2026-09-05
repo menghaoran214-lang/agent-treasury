@@ -22,8 +22,8 @@ export const ledger = {
       .reduce((s, e) => s + e.receipt.amount, 0);
   },
 
-  stats() {
-    return sqliteStorage.stats();
+  stats(quoteCurrency = 'USD') {
+    return sqliteStorage.stats(quoteCurrency);
   },
 
   clear(): void {
