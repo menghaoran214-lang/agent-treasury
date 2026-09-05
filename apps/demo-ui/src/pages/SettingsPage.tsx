@@ -116,6 +116,18 @@ export default function SettingsPage({ onNotificationModeChange }: Props) {
         {history.length > 0 && <details className="reconciliation-history"><summary>{t('settings.reconciliation.history').replace('{n}', String(history.length))}</summary>{history.slice(0, 5).map(item => <div key={item.id}><span className={`badge ${item.to_state === 'completed' ? 'badge-green' : 'badge-red'}`}>{t(`settings.reconciliation.${item.to_state}`)}</span> <span className="mono">{item.purchase_id}</span> · {item.note}</div>)}</details>}
       </div>
 
+      <section className="settings-contact" aria-labelledby="settings-contact-title">
+        <div>
+          <div className="settings-contact-title" id="settings-contact-title">{t('settings.contact.title')}</div>
+          <p>{t('settings.contact.description')}</p>
+        </div>
+        <a href="https://x.com/menghaoran214" target="_blank" rel="noreferrer" aria-label={`${t('settings.contact.open')} @menghaoran214`}>
+          <span className="x-mark" aria-hidden="true">𝕏</span>
+          <span><b>小Meng知识库</b><small>@menghaoran214</small></span>
+          <span className="contact-arrow" aria-hidden="true">↗</span>
+        </a>
+      </section>
+
       {resolving && <div className="modal-overlay" onClick={() => setResolving(null)}><div className="modal" onClick={event => event.stopPropagation()}>
         <div className="modal-header"><div className="modal-title">{t('settings.reconciliation.modalTitle')}</div><button className="modal-close" onClick={() => setResolving(null)}>×</button></div>
         <div className="reconciliation-warning">{t('settings.reconciliation.warning')}</div>
