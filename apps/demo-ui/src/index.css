@@ -335,9 +335,7 @@ body { background: radial-gradient(circle at 82% 12%, rgba(28, 52, 76, .28), tra
 .app-shell { min-height: 100vh; }
 .app-header { height: 70px; padding: 0 24px; background: rgba(7,11,16,.96); border-bottom-color: var(--border); position: fixed; inset: 0 0 auto; z-index: 200; }
 .app-brand { min-width: auto; gap: 12px; }
-.binance-mark { position: relative; width: 25px; height: 25px; transform: rotate(45deg); }
-.binance-mark i { position: absolute; width: 8px; height: 8px; background: var(--yellow); }
-.binance-mark i:nth-child(1) { top: 0; left: 0; }.binance-mark i:nth-child(2) { top: 0; right: 0; }.binance-mark i:nth-child(3) { bottom: 0; left: 0; }.binance-mark i:nth-child(4) { bottom: 0; right: 0; }
+.treasury-mark { width: 30px; height: 30px; display: block; }
 .brand-divider { width: 1px; height: 26px; background: var(--border); margin: 0 3px; }
 .app-logo { color: var(--text); font-size: 17px; letter-spacing: -.01em; }
 .mode-chip { color: var(--yellow); padding: 7px 12px; border: 1px solid var(--yellow-border); border-radius: 6px; }
@@ -398,7 +396,7 @@ body { background: radial-gradient(circle at 82% 12%, rgba(28, 52, 76, .28), tra
 /* V2 onboarding and secondary workspaces */
 .setup-container { max-width: 1180px; margin: 0 auto; padding: 34px 28px 58px; }
 .setup-header { text-align: left; margin-bottom: 24px; padding: 20px 0 18px; border-bottom: 1px solid var(--border); }
-.setup-logo { margin-bottom: 10px; font-size: 12px; letter-spacing: .14em; }.setup-title { font-size: 28px; letter-spacing: -.035em; }.setup-sub { color: var(--text-secondary); }
+.setup-logo { margin-bottom: 10px; font-size: 12px; letter-spacing: .14em; display:flex; align-items:center; gap:8px; }.setup-logo img { width:24px; height:24px; }.setup-title { font-size: 28px; letter-spacing: -.035em; }.setup-sub { color: var(--text-secondary); }
 .setup-card { padding: 0; background: transparent; border: 0; display: grid; grid-template-columns: 1.35fr .65fr; gap: 14px; }
 .setup-section { margin: 0; padding: 20px; background: linear-gradient(145deg, rgba(17,25,34,.98), rgba(12,18,25,.98)); border: 1px solid var(--border); border-radius: 8px; }
 .setup-section:nth-child(1),.setup-section:nth-child(2),.setup-actions { grid-column: 1 / -1; }.setup-section-title { color: var(--text-secondary); }

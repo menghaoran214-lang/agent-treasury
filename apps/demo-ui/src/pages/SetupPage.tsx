@@ -50,7 +50,7 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
   return (
     <div className="setup-container">
       <div className="setup-header">
-        <div className="setup-logo">⟡ Agent Treasury</div>
+        <div className="setup-logo"><img src="/agent-treasury-mark.svg" alt="" /> Agent Treasury</div>
         <h1 className="setup-title">{t('setup.title')}</h1>
         <p className="setup-sub">{t('setup.subtitle')}</p>
       </div>

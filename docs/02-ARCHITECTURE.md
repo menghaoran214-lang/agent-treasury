@@ -28,12 +28,9 @@
 └──────────────────┬──────────────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────────────┐
-│              Treasury MCP Server (Gate 2)            │
-│        StdioServerTransport + @modelcontextprotocol  │
-│         8 tools: request_purchase, get_receipt,      │
-│         get_ledger, get_policy, propose_policy_      │
-│         change, approve_purchase, reject_purchase,  │
-│         get_purchase_status                          │
+│              Treasury MCP Interface                  │
+│      stdio for development + Streamable HTTP /mcp    │
+│    purchase, approval, policy, receipt and accounting │
 └──────────────────┬──────────────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────────────┐
@@ -85,12 +82,13 @@ Treasury Runtime
     ├─ Security Gate (risk assessment + SEVERE_OVERPRICE guard)
     │       └── BLOCKED → stops immediately
     ├─ Fair Price (tier-based range check)
-    ├─ Policy Engine (auto_pay_limit check)
+    ├─ Policy Engine
     │       └── price ≤ auto_pay_limit → auto-approve
-    │       └── price > auto_pay_limit → HUMAN_APPROVAL_REQUIRED
+    │       └── auto limit < price ≤ hard limit → HUMAN_APPROVAL_REQUIRED
+    │       └── per-payment / daily / monthly limit exceeded → BLOCKED
     │
     ▼
-Payment Adapter (mock / x402)
+Payment Adapter → PaymentRail → WalletAdapter
     │
     ▼
 Receipt + Ledger Entry saved to SQLite
@@ -119,7 +117,8 @@ COMPLETED | HUMAN_APPROVAL_REQUIRED | BLOCKED | FAILED
 | `runtime/ledger.ts` | SQLite-backed ledger |
 | `runtime/treasury.ts` | Orchestration / vertical slice |
 | `storage/sqliteStorage.ts` | SQLite persistence (purchases, policies, receipts, ledger_entries) |
-| `mcp/server.ts` | MCP Server on StdioServerTransport (Gate 2) |
+| `mcp/server.ts` | Treasury MCP tools, exposed over stdio or Streamable HTTP |
+| `server/unifiedService.ts` | One local process for UI, API, MCP, database, and wallet health |
 | `cli.ts` | Dev/test CLI entry point |
 
 ## MCP Protocol
@@ -136,6 +135,9 @@ Skill = Agent-facing guidance (when to call Treasury, how to interpret responses
 
 ## Payment Adapter (Gate 4)
 
-Currently: **Mock Payment** — returns fake tx reference immediately.
+Default: **Mock Payment** — safe local evaluation without moving funds.
 
-Gate 4: Replace with Binance x402 SDK for real USDC settlement.
+Verified real route: Binance Agentic Wallet direct-token transfer on BSC-USDT.
+The architecture is not limited to that route: wallets implement `WalletAdapter`,
+while direct transfer, x402, subscription, and future settlement methods implement
+`PaymentRail`. A rail is usable only after its own implementation and verification.

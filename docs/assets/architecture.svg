@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="690" viewBox="0 0 1200 690" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Treasury architecture</title>
+  <desc id="desc">Agents send purchase intent through Skill and MCP into Treasury governance, which selects vendors, applies policy and safety, delegates signing to wallets, and records receipts and accounting.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07101a"/><stop offset="1" stop-color="#0d1823"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd84d"/><stop offset="1" stop-color="#f5b800"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity=".28"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0l10 5-10 5z" fill="#f5b800"/></marker>
+    <style>
+      .title{font:700 30px system-ui,sans-serif;fill:#f4f7fb}.sub{font:400 15px system-ui,sans-serif;fill:#8d9aaa}.h{font:700 18px system-ui,sans-serif;fill:#f4f7fb}.p{font:400 13px system-ui,sans-serif;fill:#9ba7b5}.tag{font:700 12px system-ui,sans-serif;fill:#f5b800;letter-spacing:.08em}.box{fill:#101b26;stroke:#263544;stroke-width:1}.core{fill:#111b24;stroke:#f5b800;stroke-width:2}.line{fill:none;stroke:#f5b800;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1200" height="690" rx="22" fill="url(#bg)"/>
+  <path fill="url(#gold)" d="M42 32h18l20 26 20-26h18v58h-18V60L80 84 60 60v30H42z"/>
+  <text x="140" y="58" class="title">Agent Treasury</text><text x="140" y="83" class="sub">Financial · Procurement · Accounting governance for autonomous agents</text>
+
+  <g filter="url(#shadow)"><rect class="box" x="45" y="145" width="220" height="116" rx="14"/><text class="tag" x="67" y="176">INTENT</text><text class="h" x="67" y="207">AI Agent / Human</text><text class="p" x="67" y="233">Natural language purchase need</text></g>
+  <g filter="url(#shadow)"><rect class="box" x="335" y="145" width="220" height="116" rx="14"/><text class="tag" x="357" y="176">INTEGRATION</text><text class="h" x="357" y="207">Skill + MCP</text><text class="p" x="357" y="233">Structured purchase request</text></g>
+  <path class="line" d="M265 203h60"/>
+
+  <g filter="url(#shadow)"><rect class="core" x="625" y="116" width="530" height="314" rx="18"/><text class="tag" x="651" y="151">TREASURY GOVERNANCE</text><text class="h" x="651" y="181">Decide before money moves</text>
+    <rect class="box" x="651" y="205" width="148" height="82" rx="10"/><text class="h" x="670" y="235">Procurement</text><text class="p" x="670" y="259">Vendor + value score</text>
+    <rect class="box" x="816" y="205" width="148" height="82" rx="10"/><text class="h" x="835" y="235">Fair price</text><text class="p" x="835" y="259">Market reasonableness</text>
+    <rect class="box" x="981" y="205" width="148" height="82" rx="10"/><text class="h" x="1000" y="235">Security</text><text class="p" x="1000" y="259">Route + risk gate</text>
+    <rect class="box" x="651" y="307" width="226" height="88" rx="10"/><text class="h" x="670" y="338">Financial policy</text><text class="p" x="670" y="362">Auto · approve · hard block</text>
+    <rect class="box" x="899" y="307" width="230" height="88" rx="10"/><text class="h" x="918" y="338">Lifecycle control</text><text class="p" x="918" y="362">Idempotency · UNKNOWN freeze</text>
+  </g>
+  <path class="line" d="M555 203h60"/>
+
+  <g filter="url(#shadow)"><rect class="box" x="45" y="500" width="250" height="125" rx="14"/><text class="tag" x="67" y="531">SETTLEMENT</text><text class="h" x="67" y="562">PaymentRail</text><text class="p" x="67" y="587">Direct transfer · x402 · future rails</text></g>
+  <g filter="url(#shadow)"><rect class="box" x="335" y="500" width="250" height="125" rx="14"/><text class="tag" x="357" y="531">CUSTODY</text><text class="h" x="357" y="562">WalletAdapter</text><text class="p" x="357" y="587">Wallet signs; Treasury never holds keys</text></g>
+  <g filter="url(#shadow)"><rect class="box" x="625" y="500" width="250" height="125" rx="14"/><text class="tag" x="647" y="531">EVIDENCE</text><text class="h" x="647" y="562">Receipt + Delivery</text><text class="p" x="647" y="587">Payment proof and service outcome</text></g>
+  <g filter="url(#shadow)"><rect class="box" x="915" y="500" width="240" height="125" rx="14"/><text class="tag" x="937" y="531">ACCOUNTING</text><text class="h" x="937" y="562">SQLite Ledger</text><text class="p" x="937" y="587">Local, searchable, auditable history</text></g>
+  <path class="line" d="M891 430v42H170v18"/><path class="line" d="M295 562h30"/><path class="line" d="M585 562h30"/><path class="line" d="M875 562h30"/>
+  <text class="sub" x="45" y="662">Policy governs payment. Wallets retain custody. Accounting preserves the reason and evidence.</text>
+</svg>

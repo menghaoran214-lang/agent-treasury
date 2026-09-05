@@ -43,6 +43,9 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Month, year, and all-time reports derived from persisted entries, including real trends, categories, counterparties, and internal-transfer exclusion.
 - Project, payment-chain, token, and anomaly report dimensions, with editable project assignment from the ledger.
 - Deterministic Chinese/English natural-language accounting queries in the demo UI, plus a host-oriented structured read-only MCP query tool.
+- Persistent Quality First, Balanced, and Price First procurement preferences.
+- Enforced automatic-payment, human-approval, per-payment hard block, daily budget, and monthly budget boundaries.
+- Formal gold geometric M mark and synchronized English, Simplified Chinese, and Traditional Chinese repository entry pages.
 
 ## What Is Not Yet Production-Ready
 

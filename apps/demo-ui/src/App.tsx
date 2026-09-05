@@ -185,7 +185,7 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-brand">
-          <div className="binance-mark" aria-hidden="true"><i /><i /><i /><i /></div>
+          <img className="treasury-mark" src="/agent-treasury-mark.svg" alt="" aria-hidden="true" />
           <div className="brand-divider" />
           <div className="app-logo">Agent Treasury</div>
         </div>
