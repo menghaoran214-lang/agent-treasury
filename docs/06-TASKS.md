@@ -62,7 +62,7 @@ Last synchronized: 2026-09-05
 - [x] Match chain transaction hash, Treasury receipt, and ledger record
 - [x] OS-safe Windows→WSL command bridge and read-only connected-wallet verification
 - [x] Simulated explicit failure, timeout, malformed response, and UNKNOWN freeze without duplicate execution
-- [ ] Add operator reconciliation for UNKNOWN payments; never auto-retry
+- [x] Add operator reconciliation for UNKNOWN payments; never auto-retry
 
 ### Product V2 — Agent Accounting Foundation
 

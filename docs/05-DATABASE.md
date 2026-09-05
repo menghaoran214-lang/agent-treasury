@@ -31,6 +31,12 @@ receive a USD snapshot from the explicit `stablecoin_parity_v1` policy.
 `user_preferences` currently persists the selected quote currency. This changes
 presentation and aggregation only; it never rewrites original transaction facts.
 
+`payment_reconciliations` is an append-only operator audit trail for frozen
+`UNKNOWN` outcomes. It records the original state, verified final state,
+transaction reference, required note, actor, and time. Reconciliation is an
+atomic state correction across payment, purchase, receipt, and ledger records;
+it never initiates a payment or an automatic retry.
+
 ## Storage Engine
 
 SQLite via `better-sqlite3`. DB path configured via `TREASURY_DB_PATH` env var (default: `./data/treasury.db`).

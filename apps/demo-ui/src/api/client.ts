@@ -229,3 +229,20 @@ export interface TreasuryEvent {
 export const eventApi = {
   list: () => get<{ events: TreasuryEvent[] }>('/events?limit=50'),
 };
+
+export interface ReconciliationPayment {
+  purchase_id: string; provider: string; payment_state: 'unknown'; reference: string | null;
+  amount: number | null; currency: string | null; vendor_name: string | null; chain_id: string | null;
+  token_symbol: string | null; recipient: string | null; updated_at: string;
+}
+
+export interface PaymentReconciliation {
+  id: string; purchase_id: string; from_state: 'unknown'; to_state: 'completed' | 'failed';
+  reference: string | null; note: string; actor: string; created_at: string;
+}
+
+export const reconciliationApi = {
+  list: () => get<{ pending: ReconciliationPayment[]; history: PaymentReconciliation[] }>('/payments/reconciliation'),
+  resolve: (purchaseId: string, outcome: 'completed' | 'failed', reference: string, note: string) =>
+    post<{ payment: ReconciliationPayment; reconciliation: PaymentReconciliation }>(`/payments/${purchaseId}/reconcile`, { outcome, reference, note }),
+};

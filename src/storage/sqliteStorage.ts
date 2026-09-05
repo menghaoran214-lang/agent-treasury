@@ -5,7 +5,7 @@
  */
 // @ts-ignore -- esModuleInterop + bundler moduleResolution causes false positive on .d.cts
 import Database from 'better-sqlite3';
-import type { Receipt, LedgerEntry, Policy, Counterparty, CounterpartyType, AccountingMetadata, AccountingRevision, ValuationSnapshot, UserPreferences } from '../domain/types.js';
+import type { Receipt, LedgerEntry, Policy, Counterparty, CounterpartyType, AccountingMetadata, AccountingRevision, ValuationSnapshot, UserPreferences, PaymentReconciliation } from '../domain/types.js';
 import { getDatabasePath } from '../config/runtimeConfig.js';
 
 const _db = (() => {
@@ -86,6 +86,16 @@ const _db = (() => {
     severity    TEXT NOT NULL,
     purchase_id TEXT,
     data_json   TEXT NOT NULL DEFAULT '{}',
+    created_at  TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS payment_reconciliations (
+    id          TEXT PRIMARY KEY,
+    purchase_id TEXT NOT NULL,
+    from_state  TEXT NOT NULL,
+    to_state    TEXT NOT NULL,
+    reference   TEXT,
+    note        TEXT NOT NULL,
+    actor       TEXT NOT NULL,
     created_at  TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS counterparties (
@@ -651,5 +661,63 @@ export const sqliteStorage = {
       idempotent_reuse: Boolean(row.idempotent_reuse),
       raw_response: row.raw_response ? JSON.parse(row.raw_response as string) : null,
     } as ReturnType<typeof sqliteStorage.getPaymentRecord>;
+  },
+
+  listUnknownPayments() {
+    return _db.prepare("SELECT * FROM payment_records WHERE payment_state = 'unknown' ORDER BY updated_at DESC").all();
+  },
+
+  getPaymentReconciliations(purchaseId?: string): PaymentReconciliation[] {
+    const rows = purchaseId
+      ? _db.prepare('SELECT * FROM payment_reconciliations WHERE purchase_id = ? ORDER BY created_at DESC').all(purchaseId)
+      : _db.prepare('SELECT * FROM payment_reconciliations ORDER BY created_at DESC').all();
+    return rows as PaymentReconciliation[];
+  },
+
+  reconcileUnknownPayment(data: { purchase_id: string; outcome: 'completed' | 'failed'; reference?: string; note: string; actor?: string }) {
+    const reconcile = _db.transaction(() => {
+      const current = this.getPaymentRecord(data.purchase_id);
+      if (!current) throw new Error('PAYMENT_NOT_FOUND');
+      if (current.payment_state !== 'unknown') throw new Error('PAYMENT_NOT_UNKNOWN');
+      if (data.outcome === 'completed' && !data.reference?.trim()) throw new Error('REFERENCE_REQUIRED');
+      if (!data.note.trim()) throw new Error('NOTE_REQUIRED');
+      const now = new Date().toISOString();
+      const reference = data.reference?.trim() || current.reference;
+      const audit: PaymentReconciliation = {
+        id: `recon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        purchase_id: data.purchase_id, from_state: 'unknown', to_state: data.outcome,
+        reference, note: data.note.trim(), actor: data.actor ?? 'operator', created_at: now,
+      };
+      _db.prepare('UPDATE payment_records SET payment_state = ?, reference = ?, updated_at = ? WHERE purchase_id = ?')
+        .run(data.outcome, reference, now, data.purchase_id);
+      _db.prepare(`INSERT INTO payment_reconciliations
+        (id, purchase_id, from_state, to_state, reference, note, actor, created_at)
+        VALUES (:id, :purchase_id, :from_state, :to_state, :reference, :note, :actor, :created_at)`).run(audit);
+
+      const patchReceipt = (raw: string) => {
+        const parsed = JSON.parse(raw) as Receipt | LedgerEntry;
+        const receipt = 'receipt' in parsed ? parsed.receipt : parsed;
+        receipt.payment_state = data.outcome;
+        receipt.status = data.outcome;
+        receipt.result = data.outcome === 'completed' ? 'SUCCESS' : 'FAILED';
+        if (reference) receipt.transaction_reference = reference;
+        return JSON.stringify(parsed);
+      };
+      const receiptRows = _db.prepare('SELECT id, receipt_json FROM receipts WHERE purchase_id = ?').all(data.purchase_id) as Array<{ id: string; receipt_json: string }>;
+      for (const row of receiptRows) _db.prepare('UPDATE receipts SET status = ?, receipt_json = ? WHERE id = ?').run(data.outcome, patchReceipt(row.receipt_json), row.id);
+      const ledgerRows = _db.prepare('SELECT id, receipt_json FROM ledger_entries WHERE purchase_id = ?').all(data.purchase_id) as Array<{ id: string; receipt_json: string }>;
+      for (const row of ledgerRows) _db.prepare('UPDATE ledger_entries SET status = ?, receipt_json = ? WHERE id = ?').run(data.outcome, patchReceipt(row.receipt_json), row.id);
+      _db.prepare('UPDATE purchases SET status = ?, updated_at = ? WHERE id = ?').run(data.outcome, now, data.purchase_id);
+      if (data.outcome === 'completed' && current.amount != null && current.currency && ['USD','USDC','USDT'].includes(current.currency.toUpperCase())) {
+        this.saveValuationSnapshot({ purchase_id: data.purchase_id, original_amount: current.amount,
+          original_currency: current.currency.toUpperCase(), quote_currency: 'USD', fx_rate: 1,
+          quote_amount: current.amount, source: 'stablecoin_parity_v1', captured_at: now });
+      }
+      this.saveTreasuryEvent({ id: `${audit.id}:event`, event_type: data.outcome === 'completed' ? 'payment_completed' : 'payment_failed',
+        severity: data.outcome === 'completed' ? 'success' : 'error', purchase_id: data.purchase_id,
+        data: { reconciled: true, reference, note: audit.note } });
+      return { payment: this.getPaymentRecord(data.purchase_id), reconciliation: audit };
+    });
+    return reconcile();
   },
 };

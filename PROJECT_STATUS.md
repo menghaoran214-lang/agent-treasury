@@ -6,7 +6,7 @@ Last verified: 2026-09-05
 
 **Product V2 foundation — the first real payment proof is complete; payment safety and accounting expansion are in progress.**
 
-Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP interface, SQLite persistence, an Agent Skill, a hardened Binance payment adapter, and a bilingual Binance-style operations UI. It is not yet a one-click installable product, and the current machine is not connected to a real Binance Agentic Wallet.
+Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP interface, SQLite persistence, an Agent Skill, a hardened Binance payment adapter, and a bilingual Binance-style operations UI. The authenticated Windows-to-WSL wallet path and first on-chain proof are verified, but the product is not yet one-click installable.
 
 ## Gate Status
 
@@ -44,7 +44,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 
 - The first BSC-USDT payment proof is recorded and matched across tx hash, receipt, and ledger.
 - Windows can invoke the authenticated WSL wallet through an argument-only bridge; no shell string contains payment values.
-- Failure/timeout simulation is covered, but UNKNOWN reconciliation still requires an explicit operator workflow.
+- Failure/timeout simulation and an audited UNKNOWN reconciliation workflow are covered; reconciliation never automatically retries a payment.
 - A durable multi-vendor/counterparty registry is not yet implemented.
 - The UI is currently served by a development server, not a packaged background service.
 - No one-click AI host detection, MCP registration, Skill installation, start-on-boot, repair, update, or uninstall flow exists.
@@ -62,12 +62,11 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Complete UNKNOWN reconciliation and operator recovery without automatic retries.
-2. Add project, chain, token, and anomaly report dimensions.
-3. Add natural-language accounting queries and refine classification history.
-4. Split WalletAdapter from PaymentRail and formalize extension interfaces.
-5. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
-6. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
+1. Add project, chain, token, and anomaly report dimensions.
+2. Add natural-language accounting queries and refine classification history.
+3. Split WalletAdapter from PaymentRail and formalize extension interfaces.
+4. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+5. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 
 ## Known Technical Debt
 

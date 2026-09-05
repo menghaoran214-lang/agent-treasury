@@ -46,6 +46,17 @@
 - Missing conversion rates remain explicit and are never replaced by a guessed
   value.
 
+## Payment reconciliation
+
+- `GET /api/payments/reconciliation` lists only frozen `unknown` payments plus
+  the append-only operator reconciliation history.
+- `POST /api/payments/:purchaseId/reconcile` accepts `completed` or `failed`
+  with a required operator note. A completed result also requires a verified
+  transaction reference.
+- Only an `unknown` payment can be reconciled, and only once. The operation
+  updates the payment, purchase, receipt, and ledger atomically and emits an
+  audited Treasury event. It never sends or retries a payment.
+
 ## Transport
 
 JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.

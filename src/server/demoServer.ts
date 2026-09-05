@@ -181,6 +181,26 @@ app.get('/api/events', (_req, res) => {
   res.json({ events: sqliteStorage.getTreasuryEvents(limit) });
 });
 
+app.get('/api/payments/reconciliation', (_req, res) => {
+  res.json({ pending: sqliteStorage.listUnknownPayments(), history: sqliteStorage.getPaymentReconciliations() });
+});
+
+app.post('/api/payments/:purchaseId/reconcile', (req, res) => {
+  const outcome = String((req.body as { outcome?: string }).outcome ?? '');
+  const reference = String((req.body as { reference?: string }).reference ?? '').trim();
+  const note = String((req.body as { note?: string }).note ?? '').trim();
+  if (!['completed', 'failed'].includes(outcome)) { res.status(400).json({ error: 'outcome must be completed or failed' }); return; }
+  if (!note) { res.status(400).json({ error: 'operator note is required' }); return; }
+  if (outcome === 'completed' && !reference) { res.status(400).json({ error: 'transaction reference is required for completed outcome' }); return; }
+  try {
+    res.json(sqliteStorage.reconcileUnknownPayment({ purchase_id: req.params.purchaseId,
+      outcome: outcome as 'completed' | 'failed', reference, note, actor: 'operator' }));
+  } catch (error) {
+    const code = error instanceof Error ? error.message : 'RECONCILIATION_FAILED';
+    res.status(code === 'PAYMENT_NOT_FOUND' ? 404 : 409).json({ error: code });
+  }
+});
+
 app.post('/api/demo/run', async (req, res) => {
   sqliteStorage.clearDemoData();
   const runId = randomUUID();

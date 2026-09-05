@@ -137,6 +137,17 @@ export interface PaymentProviderResult {
   idempotent_reuse?: boolean;
 }
 
+export interface PaymentReconciliation {
+  id: string;
+  purchase_id: string;
+  from_state: 'unknown';
+  to_state: 'completed' | 'failed';
+  reference: string | null;
+  note: string;
+  actor: string;
+  created_at: string;
+}
+
 export const FairPriceResult = {
   PASS: 'pass',
   PRICE_ANOMALY: 'price_anomaly',

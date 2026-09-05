@@ -228,7 +228,12 @@
     "title": "Settings",
     "language": "Interface Language",
     "notification": "Notification Mode",
-    "saved": "Saved"
+    "saved": "Saved",
+    "reconciliation": {
+      "title": "Payment Reconciliation", "description": "Only uncertain payments appear here. They stay frozen and are never retried automatically.", "empty": "No payments require manual review",
+      "review": "Review", "history": "Recent reconciliations ({n})", "modalTitle": "Confirm On-chain Payment Result", "warning": "Verify the address, amount, and status in the wallet or block explorer first. This writes an audit record and never initiates another payment.",
+      "outcome": "Verified Outcome", "completed": "Confirmed successful on-chain", "failed": "Confirmed not paid", "reference": "Transaction Hash / Evidence", "referenceRequired": "A transaction hash is required for success", "referenceOptional": "Optional lookup evidence for failure", "note": "Review Note (required)", "confirm": "Confirm and Unfreeze", "error": "Reconciliation failed"
+    }
   },
   "decisionSummary": {
     "title": "Decision Summary",

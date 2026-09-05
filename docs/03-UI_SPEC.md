@@ -68,6 +68,9 @@ The UI polls persistent Treasury events while the page is open. Notification mod
 - Toasts are non-blocking and auto-dismiss.
 - Approval and exception modals require user attention.
 - `UNKNOWN` never retries automatically.
+- Settings includes a Payment Reconciliation area. It displays only frozen
+  `UNKNOWN` payments, requires wallet/explorer verification, a conclusion and
+  operator note, and shows append-only history after resolution.
 - Browser UI notifications require the Agent Treasury page to be open. Windows system notifications belong to Gate 8 productization.
 - Judge Demo reset is namespace-scoped (`judge-demo-*`) and must never clear real purchases, receipts, payments, or ledger entries.
 - Green = auto-approved, Yellow = human review, Red = blocked

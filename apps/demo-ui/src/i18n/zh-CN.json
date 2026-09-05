@@ -228,7 +228,12 @@
     "title": "设置",
     "language": "界面语言",
     "notification": "通知模式",
-    "saved": "已保存"
+    "saved": "已保存",
+    "reconciliation": {
+      "title": "支付结果核查", "description": "只处理结果不确定的支付。核查前系统保持冻结，绝不自动重试。", "empty": "没有需要人工核查的支付",
+      "review": "开始核查", "history": "最近核查记录（{n}）", "modalTitle": "确认链上支付结果", "warning": "请先在钱包或区块浏览器核对地址、金额和交易状态。此操作会写入审计记录，不能当作重新支付。",
+      "outcome": "核查结论", "completed": "已确认链上成功", "failed": "已确认没有支付成功", "reference": "交易哈希 / 凭证", "referenceRequired": "成功结论必须填写交易哈希", "referenceOptional": "失败结论可填写查询凭证", "note": "核查说明（必填）", "confirm": "确认并解除冻结", "error": "核查失败"
+    }
   },
   "decisionSummary": {
     "title": "决策摘要",
