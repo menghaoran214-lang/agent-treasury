@@ -22,7 +22,7 @@ import { directTokenTransferRail, type PaymentRail } from './paymentRail.js';
 
 export function getBinanceConfig() {
   return {
-    bawPath: process.env.BAW_CLI_PATH || (process.platform === 'win32' ? '/home/meng2062/.local/bin/baw' : 'baw'),
+    bawPath: process.env.BAW_CLI_PATH || 'baw',
     chainId: process.env.TREASURY_WALLET_CHAIN_ID || '56',
     paymentToken: process.env.TREASURY_PAYMENT_TOKEN || BSC_USDT_ROUTE.token_address,
     paymentTokenSymbol: 'USDT',

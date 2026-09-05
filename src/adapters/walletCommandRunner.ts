@@ -16,7 +16,7 @@ export type WalletExec = (
   options: { timeout: number; windowsHide: boolean },
 ) => Promise<{ stdout: string; stderr?: string }>;
 
-const DEFAULT_WSL_PATH = '/home/meng2062/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+const DEFAULT_WSL_PATH = '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
 
 function defaultExec(
   executable: string,
@@ -43,7 +43,7 @@ function defaultExec(
 export function resolveBawCommand(args: string[]): WalletCommandSpec {
   const executionHost = process.env.BAW_EXECUTION_HOST ?? 'auto';
   const useWsl = executionHost === 'wsl' || (executionHost === 'auto' && process.platform === 'win32');
-  const bawPath = process.env.BAW_CLI_PATH || (useWsl ? '/home/meng2062/.local/bin/baw' : 'baw');
+  const bawPath = process.env.BAW_CLI_PATH || 'baw';
 
   if (!useWsl) return { executable: bawPath, args };
 

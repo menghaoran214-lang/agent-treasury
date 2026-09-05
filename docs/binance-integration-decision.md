@@ -62,7 +62,7 @@ Note: mock providers remain fictional and can never be paid in Binance mode. The
 ## Environment Variables Required
 
 ```
-BAW_CLI_PATH=/home/meng2062/.local/bin/baw # verified local baw 1.9.0
+BAW_CLI_PATH=baw                           # or an absolute local path to the official CLI
 BAW_EXECUTION_HOST=auto                    # auto | wsl | native
 BAW_WSL_DISTRO=Ubuntu                     # Windows only
 TREASURY_WALLET_CHAIN_ID=56              # BSC mainnet
