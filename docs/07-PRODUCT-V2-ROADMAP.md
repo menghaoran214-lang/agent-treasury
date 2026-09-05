@@ -51,6 +51,7 @@ P1 Counterparties/accounting metadata boundary, P2 preview-first vendor import,
 P3 original-asset/quote-currency/FX snapshot handling, and the first P4
 accounting slice are complete. Ledger search/filtering, transaction detail, and
 month/year/all-time reports now use persisted facts and valuation snapshots.
-P0 payment safety is now complete, including operator reconciliation for
-UNKNOWN payments without automatic retry. The next accounting slice adds
-project, chain, token, and anomaly dimensions before natural-language queries.
+P0 payment safety is complete, including operator reconciliation for UNKNOWN
+payments without automatic retry. Project, payment-chain, token, and anomaly
+dimensions are also available in the real report. The next accounting slice is
+natural-language queries and richer classification history.

@@ -127,6 +127,8 @@ export interface AccountingReport {
   trend: Array<{ bucket: string; amount: number }>;
   categories: Array<{ name: string; amount: number; count: number }>;
   counterparties: Array<{ name: string; amount: number; count: number }>;
+  dimensions: { projects: Array<{ name: string; count: number }>; chains: Array<{ name: string; count: number }>;
+    tokens: Array<{ name: string; count: number }>; anomalies: Array<{ name: string; count: number }> };
 }
 export const reportApi = {
   get: (period: AccountingReport['period'], quote?: string) => get<AccountingReport>(`/reports?period=${period}${quote ? `&quote=${encodeURIComponent(quote)}` : ''}`),

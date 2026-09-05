@@ -186,7 +186,6 @@ export default function App() {
       <header className="app-header">
         <div className="app-brand">
           <div className="binance-mark" aria-hidden="true"><i /><i /><i /><i /></div>
-          <div className="binance-word">BINANCE</div>
           <div className="brand-divider" />
           <div className="app-logo">Agent Treasury</div>
           <span className="beta-tag">BETA</span>

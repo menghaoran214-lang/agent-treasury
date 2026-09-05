@@ -15,7 +15,7 @@ export default function ReportsPage() {
   if (loading) return <div className="empty-state"><span className="spinner" /></div>;
   const totalLabel = report?.total == null ? `— ${report?.quoteCurrency ?? 'USD'}` : `${report.total.toFixed(2)} ${report.quoteCurrency}`;
   return <div className="operations-page">
-    <div className="page-heading"><div><span className="page-index">07.</span><h1>{t('v2.reports.title')}</h1><p>{t('v2.reports.subtitle')}</p></div><div className="report-actions">
+    <div className="page-heading"><div><h1>{t('v2.reports.title')}</h1><p>{t('v2.reports.subtitle')}</p></div><div className="report-actions">
       <div className="segment-control">{(['month','year','all'] as const).map(value => <button key={value} className={period === value ? 'active' : ''} onClick={() => setPeriod(value)}>{t(`v2.reports.period.${value}`)}</button>)}</div>
       <button className="btn btn-ghost" onClick={() => window.print()}>{t('v2.reports.export')}</button>
     </div></div>
@@ -32,6 +32,9 @@ export default function ReportsPage() {
       <article className="report-panel"><h2>{t('v2.reports.categories')}</h2><Distribution rows={report?.categories ?? []} /></article>
       <article className="report-panel"><h2>{t('v2.reports.counterparties')}</h2><Distribution rows={report?.counterparties ?? []} /></article>
     </section>
+    <section className="dimension-grid">
+      {(['projects','chains','tokens','anomalies'] as const).map(kind => <article className="report-panel" key={kind}><h2>{t(`v2.reports.dimensions.${kind}`)}</h2><CountDistribution kind={kind} rows={report?.dimensions?.[kind] ?? []} /></article>)}
+    </section>
   </div>;
 }
 
@@ -39,4 +42,15 @@ function Distribution({ rows }: { rows: Array<{ name: string; amount: number; co
   const max = Math.max(...rows.map(row => row.amount), 1);
   if (!rows.length) return <div className="empty-state-text">{t('v2.reports.noData')}</div>;
   return <div className="distribution-list">{rows.slice(0, 6).map(row => <div key={row.name}><span>{row.name}<small>{row.count}</small></span><b>{row.amount.toFixed(2)}</b><i><em style={{width:`${row.amount/max*100}%`}} /></i></div>)}</div>;
+}
+
+function CountDistribution({ kind, rows }: { kind: 'projects' | 'chains' | 'tokens' | 'anomalies'; rows: Array<{ name: string; count: number }> }) {
+  const max = Math.max(...rows.map(row => row.count), 1);
+  if (!rows.length) return <div className="empty-state-text">{t(kind === 'anomalies' ? 'v2.reports.dimensions.noAnomalies' : 'v2.reports.noData')}</div>;
+  const label = (name: string) => {
+    if (kind === 'chains' && name === '56') return 'BSC (56)';
+    const mapped: Record<string, string> = { unassigned: 'unassigned', off_chain: 'offChain', blocked: 'blocked', failed: 'failed', payment_unknown: 'paymentUnknown', price_anomaly: 'priceAnomaly' };
+    return mapped[name] ? t(`v2.reports.dimensions.${mapped[name]}`) : name;
+  };
+  return <div className="distribution-list count-list">{rows.slice(0, 6).map(row => <div key={row.name}><span>{label(row.name)}</span><b>{row.count}</b><i><em style={{width:`${row.count/max*100}%`}} /></i></div>)}</div>;
 }

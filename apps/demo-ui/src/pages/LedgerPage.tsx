@@ -49,6 +49,7 @@ export default function LedgerPage({ onViewReceipt }: Props) {
       });
       await ledgerApi.updateAccounting(editing.purchaseId, {
         counterparty_id: counterpartyId, category: editing.category, note: editing.note,
+        project: editing.project,
         is_internal_transfer: editing.internal, include_in_spend: !editing.internal,
       });
       setData(await ledgerApi.get(quoteCurrency));
@@ -155,8 +156,8 @@ export default function LedgerPage({ onViewReceipt }: Props) {
                       <button className="btn btn-ghost" style={{ marginLeft: 8, padding: '4px 8px' }} onClick={(event) => {
                         event.stopPropagation();
                         setEditing({ purchaseId, counterpartyId: entry.counterparty?.id ?? '', systemName: vendorName,
-                          displayName, type: entry.counterparty?.type ?? 'unknown', category: entry.accounting?.category ?? 'uncategorized',
-                          note: entry.accounting?.note ?? '', internal: entry.accounting?.is_internal_transfer ?? false });
+                          displayName, type: entry.counterparty?.type ?? 'unknown', category: entry.accounting?.category ?? item.resource_type ?? 'uncategorized',
+                          project: entry.accounting?.project ?? '', note: entry.accounting?.note ?? '', internal: entry.accounting?.is_internal_transfer ?? false });
                       }}>{t('ledger.edit')}</button>
                     </td>
                   </tr>
@@ -175,6 +176,7 @@ export default function LedgerPage({ onViewReceipt }: Props) {
             {['supplier','saas_provider','ai_agent','person','own_wallet','unknown'].map(type => <option key={type} value={type}>{t(`ledger.counterparty.${type}`)}</option>)}
           </select></div>
           <div className="form-group"><label>{t('ledger.accounting.category')}</label><input className="form-input" value={editing.category} onChange={e => setEditing({ ...editing, category: e.target.value })} /></div>
+          <div className="form-group"><label>{t('ledger.accounting.project')}</label><input className="form-input" value={editing.project} onChange={e => setEditing({ ...editing, project: e.target.value })} /></div>
           <div className="form-group"><label>{t('ledger.accounting.note')}</label><textarea className="form-input" value={editing.note} onChange={e => setEditing({ ...editing, note: e.target.value })} /></div>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={editing.internal} onChange={e => setEditing({ ...editing, internal: e.target.checked })} />{t('ledger.accounting.internal')}</label>
           <div className="modal-footer"><button className="btn btn-ghost" onClick={() => setEditing(null)}>{t('common.cancel')}</button><button className="btn btn-primary" disabled={saving} onClick={saveAccounting}>{saving ? t('common.saving') : t('common.save')}</button></div>

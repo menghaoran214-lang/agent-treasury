@@ -74,7 +74,7 @@ Last synchronized: 2026-09-05
 - [x] Multi-currency display with original asset, persistent quote currency, immutable FX snapshot, and missing-rate safety
 - [x] Ledger search and filters plus a transaction-fact/accounting detail drawer
 - [x] Monthly, yearly, and all-time reports with real trends, categories, and counterparties
-- [ ] Project, chain, token, and anomaly report dimensions
+- [x] Project, chain, token, and anomaly report dimensions
 - [ ] Natural-language accounting queries
 
 ### Gate 8 — One-Click Productization

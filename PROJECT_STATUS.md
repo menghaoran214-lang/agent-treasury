@@ -39,6 +39,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Immutable transaction-time valuation snapshots and persistent USD/USDC/USDT/BTC quote preference with explicit missing-rate handling.
 - Searchable and filterable ledger with an immutable-fact/accounting detail drawer.
 - Month, year, and all-time reports derived from persisted entries, including real trends, categories, counterparties, and internal-transfer exclusion.
+- Project, payment-chain, token, and anomaly report dimensions, with editable project assignment from the ledger.
 
 ## What Is Not Yet Production-Ready
 
@@ -62,11 +63,10 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Add project, chain, token, and anomaly report dimensions.
-2. Add natural-language accounting queries and refine classification history.
-3. Split WalletAdapter from PaymentRail and formalize extension interfaces.
-4. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
-5. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
+1. Add natural-language accounting queries and refine classification history.
+2. Split WalletAdapter from PaymentRail and formalize extension interfaces.
+3. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+4. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 
 ## Known Technical Debt
 

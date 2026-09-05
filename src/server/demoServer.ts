@@ -266,7 +266,8 @@ app.get('/api/reports', (_req, res) => {
   const requestedPeriod = String(_req.query.period ?? 'month');
   const period = (['month', 'year', 'all'].includes(requestedPeriod) ? requestedPeriod : 'month') as ReportPeriod;
   const quote = String(_req.query.quote ?? sqliteStorage.getPreferences().quote_currency).toUpperCase();
-  res.json(buildAccountingReport(sqliteStorage.getAllEntries(), period, quote, id => sqliteStorage.getValuationSnapshot(id, 'USD')));
+  res.json(buildAccountingReport(sqliteStorage.getAllEntries(), period, quote,
+    id => sqliteStorage.getValuationSnapshot(id, 'USD'), id => sqliteStorage.getPaymentRecord(id)));
 });
 
 const counterpartyTypes = new Set(Object.values(CounterpartyType));
