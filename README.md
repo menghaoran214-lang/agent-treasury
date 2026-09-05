@@ -10,6 +10,12 @@
 
 Agent Treasury is not a wallet and it is not limited to x402. It sits between an AI agent and paid resources, then governs vendor selection, value, risk, approval, settlement, receipts, and accounting. Wallets keep custody and signing; Treasury supplies the financial controls and audit trail.
 
+## Why it matters
+
+Wallets answer how to move money. They do not decide whether an agent should spend, whether a vendor is trustworthy, whether a price is reasonable, or how the purchase should be explained later. Autonomous commerce needs an independent layer that joins permissions, procurement, settlement, and accounting.
+
+Treasury is designed to reduce interruptions after initial policy setup: low-risk purchases inside the automatic limit complete directly, amounts above that limit request approval, and hard-limit or safety violations stop immediately.
+
 ## Three jobs before an agent spends
 
 | Role | Question answered |
@@ -19,6 +25,20 @@ Agent Treasury is not a wallet and it is not limited to x402. It sits between an
 | Accounting system | What was purchased, why, and where is the evidence? |
 
 Human policy always wins. A procurement preference can change ranking among allowed offers, but it can never override security checks, approval thresholds, or hard spending limits.
+
+## How it works
+
+Users keep speaking naturally inside an integrated AI host—for example, “Get the latest Robinhood market data.” The host turns that intent into a purchase request; Treasury compares vendors, applies policy, delegates signing to the wallet, verifies delivery, and writes the accounting record.
+
+![From natural language to an auditable purchase](docs/assets/purchase-flow.svg)
+
+| Mode | Automatic completion | Human approval | Exception or block |
+|---|---|---|---|
+| Detailed | Process and result | Center approval card | Exception card |
+| Concise | Bottom-right result | Center approval card | Exception card |
+| Silent | Hidden | Center approval card | Exception card |
+
+In-browser notifications and cards work today. Cross-host operating-system notifications are Gate 8 work and are not complete.
 
 ## What works today
 
@@ -48,6 +68,19 @@ npm run service
 ```
 
 Open `http://127.0.0.1:3333`. The default payment mode is `mock`; evaluating the UI does not initiate a real transfer. Run the complete verification suite with `npm run test:all`.
+
+## Support matrix
+
+| Capability | Current status |
+|---|---|
+| Mock settlement | Complete; default mode |
+| Binance Agentic Wallet | One controlled BSC-USDT proof completed |
+| BSC-USDT direct transfer | Verified |
+| Multi-chain/token route model | Complete; execution requires route-by-route verification |
+| Other wallets such as OKX | Extension contract only; no real adapter yet |
+| x402 and subscription rails | PaymentRail extension point only; not implemented |
+| OS-level notifications | Not implemented |
+| One-click installer | Not implemented |
 
 ## Agent integration
 
@@ -80,6 +113,18 @@ Real Binance settlement additionally requires a locally authenticated official `
 The governed Treasury runtime, accounting UI, MCP/Skill integration, unified local service, and first controlled real-payment proof are complete. One-click packaging, clean-machine acceptance, signed releases, upgrades, diagnostics, rollback, and uninstall are not complete.
 
 See [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`docs/07-PRODUCT-V2-ROADMAP.md`](docs/07-PRODUCT-V2-ROADMAP.md), and [`docs/02-ARCHITECTURE.md`](docs/02-ARCHITECTURE.md).
+
+## Roadmap
+
+1. Complete the public-repository security audit, documentation sync, and final visual baseline.
+2. Add service lifecycle management, AI-host detection, automatic Skill/MCP registration, and OS notifications.
+3. Build install, diagnose, repair, and uninstall workflows; verify on a clean machine.
+4. Add signed releases, upgrades, rollback, and version management.
+5. Expand wallets, chains, tokens, x402, and subscription rails only after route-specific verification.
+
+## Contributing
+
+The project is still preparing for public release. Reproducible bug reports, documentation corrections, wallet/rail design feedback, and secret-free test evidence are welcome. Run `npm run test:all` before proposing code, and never commit `.env` files, databases, logs, wallet sessions, transaction evidence, or credentials. A formal contribution guide will be added before public release.
 
 ## Contact
 
