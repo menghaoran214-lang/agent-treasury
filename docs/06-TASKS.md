@@ -81,7 +81,9 @@ Last synchronized: 2026-09-05
 ### Gate 8 — One-Click Productization
 
 - [x] Separate WalletAdapter from PaymentRail with testable extension contracts
-- [ ] One background service for MCP, UI, SQLite, policy, and wallet health
+- [x] Replace the single-route assumption with multi-chain/multi-token vendor route declarations and verified-route selection
+- [x] One local process serving MCP, UI, API, SQLite-backed policy/data, and wallet health
+- [ ] OS background-service lifecycle and automatic restart
 - [ ] Windows installer and clean uninstall
 - [ ] Detect supported AI hosts
 - [ ] Automatically register MCP and install the Treasury Skill

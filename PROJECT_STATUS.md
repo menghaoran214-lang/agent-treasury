@@ -21,7 +21,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 | 6A | Initial React demo UI and screenshot suite | Done |
 | 6B | Binance-style UI V2, operational pages, popups, responsive layout, full zh/en switching | Complete locally |
 | 7 | Real BAW wallet connection and controlled on-chain proof | Complete; Windows→WSL safety bridge verified read-only |
-| 8 | One-service runtime and one-click installer | Not started |
+| 8 | One-service runtime and one-click installer | In progress; unified local service boundary verified |
 | 9 | Signed release, upgrades, diagnostics, rollback | Not started |
 
 ## What Is Real Today
@@ -33,6 +33,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Mock payment end-to-end demo.
 - Binance provider integration through the official `baw wallet send` command, including input validation, idempotency, and UNKNOWN-state handling.
 - Separate WalletAdapter and PaymentRail contracts; Binance Agentic Wallet currently uses the direct-token-transfer rail.
+- Multi-route vendor declarations and deterministic chain/token selection; only explicitly verified routes may execute real payments.
 - UI V2 routes: live workspace, pending approvals, ledger, receipts, vendors, analytics, and settings.
 - Immediate Simplified Chinese / English switching across all functional UI copy.
 - V2 counterparties, editable accounting metadata, audit history, and internal-transfer exclusion from spend totals.
@@ -49,7 +50,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Windows can invoke the authenticated WSL wallet through an argument-only bridge; no shell string contains payment values.
 - Failure/timeout simulation and an audited UNKNOWN reconciliation workflow are covered; reconciliation never automatically retries a payment.
 - A durable multi-vendor/counterparty registry is not yet implemented.
-- The UI is currently served by a development server, not a packaged background service.
+- A unified local service can now serve the production UI, API, MCP endpoint, database access, and wallet health; OS packaging and lifecycle management remain unfinished.
 - No one-click AI host detection, MCP registration, Skill installation, start-on-boot, repair, update, or uninstall flow exists.
 - No signed installer or clean-machine acceptance test exists.
 
@@ -65,7 +66,7 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+1. Add OS lifecycle management and AI-host registration around the unified service.
 2. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 
 ## Known Technical Debt

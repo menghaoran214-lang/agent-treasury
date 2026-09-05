@@ -21,7 +21,7 @@ import { tmpdir } from 'os';
 import { setPaymentProvider, mockPaymentProvider } from '../src/adapters/paymentAdapter.js';
 import { binancePaymentProvider, getBinanceConfig } from '../src/adapters/binancePaymentProvider.js';
 import { sqliteStorage } from '../src/storage/sqliteStorage.js';
-import { BSC_USDT_ROUTE, resolvePaymentRoute, routeFingerprint } from '../src/config/paymentRoutes.js';
+import { BSC_USDT_ROUTE, listPaymentRouteOptions, resolvePaymentRoute, routeFingerprint } from '../src/config/paymentRoutes.js';
 import { PurchaseStrategy, ApprovalType } from '../src/domain/types.js';
 import type { PurchaseRequest, ProviderOffer } from '../src/domain/types.js';
 
@@ -373,6 +373,23 @@ async function run() {
     assert(first !== changedAmount, 'amount must be part of idempotency fingerprint');
   });
 
+  await test('vendor can declare multiple selectable chain and token routes', async () => {
+    const usdc = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d';
+    const multiRouteOffer = { ...mockProviderOffer, currency: 'USDC', metadata: { payment_routes: [
+      { ...BSC_USDT_ROUTE, recipient: '0x6499037270494815E73B9eb26b23c5a5859867D8' },
+      { route_id: 'bsc-usdc-direct', chain_id: '56', chain_name: 'BSC', token_symbol: 'USDC', token_address: usdc,
+        recipient: '0x6499037270494815E73B9eb26b23c5a5859867D8', rail: 'direct-token-transfer', verified: true, priority: 90 },
+      { route_id: 'tron-usdt-candidate', chain_id: 'tron-mainnet', chain_name: 'TRON', token_symbol: 'USDT', token_address: 'candidate-contract',
+        recipient: 'candidate-recipient', rail: 'direct-token-transfer', verified: false, priority: 80 },
+    ] } };
+    const options = listPaymentRouteOptions(multiRouteOffer);
+    assert(options.length === 3, `expected 3 route options, got ${options.length}`);
+    assert(options.some(route => route.token_symbol === 'USDC' && route.available), 'verified BSC-USDC route should be selectable');
+    assert(options.some(route => route.chain_name === 'TRON' && !route.available), 'unverified TRON route must remain unavailable');
+    const selected = resolvePaymentRoute({ provider: multiRouteOffer, configuredChainId: '56', configuredToken: usdc });
+    assert(selected.ok && selected.route.token_symbol === 'USDC', 'configured BSC-USDC route should resolve');
+  });
+
   // ─── Real proof recipient ─────────────────────────────────────────────────
   console.log('\n--- Real Proof Recipient ---');
 
@@ -443,7 +460,7 @@ async function run() {
     process.env.TREASURY_WALLET_CHAIN_ID = '97'; // testnet
     const result = await binancePaymentProvider.execute(makeRequest('bad-chain-test'), mockProviderOffer, ApprovalType.AUTO);
     assert(result.success === false, 'testnet should be rejected');
-    assert(result.message.includes('BSC Mainnet 56 only'), `expected BSC Mainnet error: ${result.message}`);
+    assert(result.message.includes('Unsupported chain: 97') && result.message.includes('BSC 56'), `expected configured-chain error: ${result.message}`);
     process.env.TREASURY_WALLET_CHAIN_ID = '56';
     process.env.TREASURY_PAYMENT_MODE = 'mock';
   });

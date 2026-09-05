@@ -15,11 +15,19 @@ export type WalletTransferResult =
 /** A wallet signs and broadcasts. It does not choose vendors, routes, or policy. */
 export interface WalletAdapter {
   readonly id: string;
+  getStatus?(): Promise<{ state: 'connected' | 'disconnected' | 'unknown'; address?: string; chains?: string[]; message?: string }>;
   sendToken(request: WalletTransferRequest): Promise<WalletTransferResult>;
 }
 
 export const binanceAgenticWalletAdapter: WalletAdapter = {
   id: 'binance-agentic-wallet',
+  async getStatus() {
+    const outcome = await runBawCommand(['wallet', 'status', '--json'], { timeoutMs: 10_000 });
+    if (outcome.kind !== 'success') return { state: 'unknown', message: outcome.message };
+    const data = outcome.data as { status?: string; address?: string; chains?: string[] } | undefined;
+    const connected = String(data?.status ?? '').toLowerCase() === 'connected';
+    return { state: connected ? 'connected' : 'disconnected', address: data?.address, chains: data?.chains };
+  },
   async sendToken(request) {
     const outcome = await runBawCommand([
       'wallet', 'send',

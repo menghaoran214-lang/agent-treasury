@@ -6,6 +6,7 @@ import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
 import type { Policy, PurchaseRequest, ProviderOffer } from '../domain/types.js';
 import { runTreasury } from '../runtime/treasury.js';
 import { queryAccountingByIntent } from '../runtime/accountingQuery.js';
+import { pathToFileURL } from 'url';
 
 // ponytail: TEST ONLY — test/e2e fixtures isolated from production vendor logic
 // Production server: NEVER import from tests/fixtures/
@@ -65,7 +66,7 @@ type ProposePolicyChange = z.infer<typeof ProposePolicyChangeSchema>;
 
 // ─── Server ─────────────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: 'TreasuryMCP', version: '1.0.0' });
+export const server = new McpServer({ name: 'TreasuryMCP', version: '1.0.0' });
 
 // ─── Tool: request_purchase ────────────────────────────────────────────────────
 
@@ -405,5 +406,8 @@ server.registerTool('query_accounting', {
 
 // ─── Start ─────────────────────────────────────────────────────────────────────
 
-const transport = new StdioServerTransport();
-server.connect(transport).catch(err => { console.error('MCP Server error:', err); process.exit(1); });
+const directRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (directRun) {
+  const transport = new StdioServerTransport();
+  server.connect(transport).catch(err => { console.error('MCP Server error:', err); process.exit(1); });
+}

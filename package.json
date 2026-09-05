@@ -24,10 +24,12 @@
     "test:integration": "npx tsx tests/integration-sqlite.ts",
     "test:gate5": "npx tsx tests/gate5-tests.ts",
     "test:gate45": "npx tsx tests/gate45-runner.ts",
-    "test:all": "npm run typecheck && npm run test && npm run test:integration && npm run test:mcp && npm run test:gate45 && npm run test:gate5",
+    "test:service": "npx tsx tests/unified-service-e2e.ts",
+    "test:all": "npm run typecheck && npm run test && npm run test:integration && npm run test:mcp && npm run test:service && npm run test:gate45 && npm run test:gate5",
     "typecheck": "tsc --noEmit",
     "demo": "node scripts/run-demo.js",
     "demo:server": "TREASURY_DB_PATH=./data/treasury-demo.db npx tsx src/server/demoServer.ts",
+    "service": "npx tsx src/server/unifiedService.ts",
     "demo:ui": "open http://localhost:5173",
     "ui:build": "cd apps/demo-ui && npm run build",
     "screenshot": "cd apps/demo-ui && node screenshot-ui.js"

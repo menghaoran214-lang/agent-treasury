@@ -21,16 +21,18 @@ Treasury sits between your agents and the outside world of paid resources (marke
 
 ```bash
 npm install
-npm run test:all   # TypeScript + unit + integration + MCP + Gate 5 (sequential)
+npm run test:all   # TypeScript + unit + integration + MCP + unified service + payment safety + Gate 5
 npm run ui:build   # production build of the Gate 6B UI
+npm run service    # UI + API + MCP + database + wallet health on one local port
 ```
 
 Individual test suites:
 ```bash
 npm run typecheck      # TypeScript — must exit 0
-npm run test           # Unit tests (16/16 Jest)
+npm run test           # Jest unit and boundary tests
 npm run test:integration  # Strategy integration (3/3 SQLite)
-npm run test:mcp       # MCP E2E (11/11 scenes)
+npm run test:mcp       # stdio MCP E2E
+npm run test:service   # unified HTTP/UI/MCP service E2E
 npm run test:gate5     # Gate 5 Champion Judge Demo (13/13)
 ```
 
@@ -44,6 +46,10 @@ npm run test       # unit tests (Jest)
 npm run test:mcp   # MCP E2E (11 scenes)
 npm run test:integration  # SQLite integration (3 strategies)
 ```
+
+The unified service exposes the production UI and API from one port,
+Streamable HTTP MCP at `/mcp`, and component plus read-only wallet health at
+`/api/runtime/status`. The default payment mode remains `mock`.
 
 ## MCP Tools
 

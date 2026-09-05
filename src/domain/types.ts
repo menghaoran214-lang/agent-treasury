@@ -189,11 +189,15 @@ export interface ProviderOffer {
 }
 
 export interface PaymentRoute {
+  route_id?: string;
   chain_id: string;
   chain_name: string;
   token_symbol: string;
   token_address: string;
   recipient: string;
+  rail?: string;
+  verified?: boolean;
+  priority?: number;
 }
 
 export interface ValueScore {

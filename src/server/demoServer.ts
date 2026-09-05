@@ -7,6 +7,7 @@
 import express, { type Request, type Response } from 'express';
 import { createServer } from 'http';
 import { randomUUID } from 'crypto';
+import { pathToFileURL } from 'url';
 import { sqliteStorage } from '../storage/index.js';
 import { runTreasury } from '../runtime/treasury.js';
 import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
@@ -19,7 +20,7 @@ import { previewVendorImport, commitVendorImport, type VendorImportCandidate } f
 import { buildAccountingReport, type ReportPeriod } from '../runtime/reporting.js';
 import { queryAccounting } from '../runtime/accountingQuery.js';
 
-const app = express();
+export const app = express();
 app.use(express.json());
 
 // ─── Demo state ────────────────────────────────────────────────────────────────
@@ -472,11 +473,13 @@ app.post('/api/reject', async (req, res) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-const PORT = parseInt(process.env.DEMO_PORT || '3333', 10);
-createServer(app).listen(PORT, () => {
-  console.log(`\n🏛  Treasury Judge Demo Server`);
-  console.log(`   http://localhost:${PORT}/judge-demo.html`);
-  console.log(`   API: http://localhost:${PORT}/api`);
-  console.log(`   Evidence: http://localhost:${PORT}/api/evidence`);
-  console.log(`   Payment mode: ${process.env.TREASURY_PAYMENT_MODE || 'mock'}\n`);
-});
+export function startDemoServer(port = parseInt(process.env.DEMO_PORT || '3333', 10)) {
+  return createServer(app).listen(port, () => {
+    console.log(`\n🏛  Treasury Judge Demo Server`);
+    console.log(`   API: http://localhost:${port}/api`);
+    console.log(`   Payment mode: ${process.env.TREASURY_PAYMENT_MODE || 'mock'}\n`);
+  });
+}
+
+const directRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (directRun) startDemoServer();
