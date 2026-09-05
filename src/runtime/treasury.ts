@@ -56,7 +56,10 @@ export async function runTreasury(
   });
 
   // 4. Policy evaluation
-  const policyDecision = evaluatePolicy(request, config.policy, securityCheck.risk, selectedOffer.price);
+  const policyDecision = evaluatePolicy(request, config.policy, securityCheck.risk, selectedOffer.price, {
+    dailySpent: ledger.todayTotal(),
+    monthlySpent: ledger.monthTotal(),
+  });
 
   // 5. Approval decision
   let approvalType: AT = AT.AUTO;

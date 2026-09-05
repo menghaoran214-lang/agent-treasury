@@ -356,7 +356,21 @@ app.get('/api/policy', (_req, res) => {
 
 app.post('/api/policy', (req, res) => {
   try {
-    const patch = req.body as Partial<Policy>;
+    const patch = req.body as Partial<Policy> & { notification_mode?: string };
+    const strategies = ['economy', 'balanced', 'performance'];
+    const notificationModes = ['detailed', 'concise', 'silent'];
+    if (patch.strategy !== undefined && !strategies.includes(patch.strategy)) {
+      return res.status(400).json({ error: 'Invalid purchase preference' });
+    }
+    if (patch.notification_mode !== undefined && !notificationModes.includes(patch.notification_mode)) {
+      return res.status(400).json({ error: 'Invalid notification mode' });
+    }
+    for (const key of ['auto_pay_limit', 'single_transaction_limit', 'daily_budget', 'monthly_budget'] as const) {
+      const value = patch[key];
+      if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
+        return res.status(400).json({ error: `${key} must be a non-negative number` });
+      }
+    }
     const current = sqliteStorage.getPolicy();
     const initialized: Policy = current ?? {
       strategy: 'balanced',
@@ -368,7 +382,13 @@ app.post('/api/policy', (req, res) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    const updated = { ...initialized, ...patch, updated_at: new Date().toISOString() } as Policy;
+    const updated = { ...initialized, ...patch, updated_at: new Date().toISOString() } as Policy & { notification_mode?: string };
+    if (updated.auto_pay_limit > updated.single_transaction_limit) {
+      return res.status(400).json({ error: 'Approval threshold cannot exceed the hard payment limit' });
+    }
+    if (updated.single_transaction_limit > updated.daily_budget || updated.daily_budget > updated.monthly_budget) {
+      return res.status(400).json({ error: 'Limits must satisfy hard payment limit ≤ daily budget ≤ monthly budget' });
+    }
     sqliteStorage.savePolicy(updated);
     res.json(updated);
   } catch {

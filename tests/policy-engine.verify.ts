@@ -70,13 +70,15 @@ async function run() {
       `price=1.00 exactly at single_limit=1 → should be AUTO`);
   }
 
-  // Bug case: price JUST ABOVE single_transaction_limit → HUMAN
+  // Hard boundary: price JUST ABOVE single_transaction_limit → BLOCKED
   {
     const policy = makePolicy({ auto_pay_limit: 2.00, single_transaction_limit: 1.00 });
     const request = makeRequest({ max_budget: 0.50 });
     const decision = evaluatePolicy(request, policy, RiskLevel.LOW, 1.01);
-    assert(decision.requires_human === true,
-      `price=1.01 > single_limit=1.00 → should require human`);
+    assert(decision.allowed === false,
+      `price=1.01 > hard limit=1.00 → should be blocked`);
+    assert(decision.requires_human === false,
+      `a hard-blocked payment must not enter the approval queue`);
     assert(decision.auto_approved === false,
       `should NOT be auto-approved`);
   }
@@ -108,6 +110,20 @@ async function run() {
     const decision = evaluatePolicy(request, policy, RiskLevel.HIGH, 0.10);
     assert(decision.requires_human === true,
       `HIGH risk → must require human regardless of price`);
+  }
+
+  // Cumulative budget boundaries are hard blocks
+  {
+    const policy = makePolicy({ daily_budget: 1.00, monthly_budget: 10.00 });
+    const decision = evaluatePolicy(makeRequest(), policy, RiskLevel.LOW, 0.25, { dailySpent: 0.80, monthlySpent: 0.80 });
+    assert(decision.allowed === false && decision.reason.includes('daily budget'),
+      `0.80 spent + 0.25 payment > 1.00 daily budget → should be blocked`);
+  }
+  {
+    const policy = makePolicy({ daily_budget: 10.00, monthly_budget: 1.00 });
+    const decision = evaluatePolicy(makeRequest(), policy, RiskLevel.LOW, 0.25, { dailySpent: 0.20, monthlySpent: 0.80 });
+    assert(decision.allowed === false && decision.reason.includes('monthly budget'),
+      `0.80 spent + 0.25 payment > 1.00 monthly budget → should be blocked`);
   }
 
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { t, i18n, Lang } from '../i18n';
-import { policyApi, reconciliationApi, type ReconciliationPayment, type PaymentReconciliation } from '../api/client';
+import { policyApi, reconciliationApi, type Policy, type ReconciliationPayment, type PaymentReconciliation } from '../api/client';
 
 interface Props { onNotificationModeChange: (mode: 'detailed' | 'concise' | 'silent') => void; }
 
 export default function SettingsPage({ onNotificationModeChange }: Props) {
   const [lang, setLang] = useState<Lang>(i18n.lang);
   const [notif, setNotif] = useState<'detailed' | 'concise' | 'silent'>('detailed');
+  const [policy, setPolicy] = useState<Policy | null>(null);
+  const [policyError, setPolicyError] = useState('');
+  const [savingPolicy, setSavingPolicy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState<ReconciliationPayment[]>([]);
   const [history, setHistory] = useState<PaymentReconciliation[]>([]);
@@ -18,7 +21,7 @@ export default function SettingsPage({ onNotificationModeChange }: Props) {
 
   const loadReconciliation = () => reconciliationApi.list().then(data => { setPending(data.pending); setHistory(data.history); }).catch(() => {});
   useEffect(() => {
-    policyApi.get().then(policy => setNotif(policy.notification_mode ?? 'detailed')).catch(() => {});
+    policyApi.get().then(value => { setPolicy(value); setNotif(value.notification_mode ?? 'detailed'); }).catch(() => {});
     loadReconciliation();
   }, []);
 
@@ -37,6 +40,22 @@ export default function SettingsPage({ onNotificationModeChange }: Props) {
     } catch {}
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const saveSpendingPolicy = async () => {
+    if (!policy) return;
+    setPolicyError(''); setSavingPolicy(true);
+    try {
+      const updated = await policyApi.update({
+        strategy: policy.strategy,
+        auto_pay_limit: policy.auto_pay_limit,
+        single_transaction_limit: policy.single_transaction_limit,
+        daily_budget: policy.daily_budget,
+        monthly_budget: policy.monthly_budget,
+      });
+      setPolicy(updated); setSaved(true); setTimeout(() => setSaved(false), 2000);
+    } catch (error) { setPolicyError(error instanceof Error ? error.message : t('settings.policy.error')); }
+    finally { setSavingPolicy(false); }
   };
 
   const submitReconciliation = async () => {
@@ -101,6 +120,26 @@ export default function SettingsPage({ onNotificationModeChange }: Props) {
           ))}
         </div>
       </div>
+
+      {policy && <div className="card policy-settings" style={{ marginBottom: 16 }}>
+        <div className="card-title">{t('settings.policy.title')}</div>
+        <p className="text-muted">{t('settings.policy.description')}</p>
+        <div className="policy-preference-grid">
+          {(['performance', 'balanced', 'economy'] as const).map(strategy => <button key={strategy} type="button" className={`policy-preference${policy.strategy === strategy ? ' selected' : ''}`} onClick={() => setPolicy({ ...policy, strategy })}>
+            <b>{t(`settings.policy.strategy.${strategy}`)}</b>
+            <span>{t(`settings.policy.strategy.${strategy}Desc`)}</span>
+          </button>)}
+        </div>
+        <div className="policy-limit-grid">
+          {(['auto_pay_limit', 'single_transaction_limit', 'daily_budget', 'monthly_budget'] as const).map(key => <label className="policy-limit" key={key}>
+            <span><b>{t(`settings.policy.limit.${key}`)}</b><small>{t(`settings.policy.limit.${key}Desc`)}</small></span>
+            <span className="policy-money"><input className="form-input" type="number" min="0" step="0.01" value={policy[key]} onChange={event => setPolicy({ ...policy, [key]: Number(event.target.value) })} /><em>USD</em></span>
+          </label>)}
+        </div>
+        <div className="policy-boundary">{t('settings.policy.boundary')}</div>
+        {policyError && <div className="error-text">{policyError}</div>}
+        <div className="policy-save"><button className="btn btn-primary" disabled={savingPolicy} onClick={saveSpendingPolicy}>{savingPolicy ? t('settings.policy.saving') : t('settings.policy.save')}</button></div>
+      </div>}
 
       <div className="card reconciliation-card">
         <div className="card-title">{t('settings.reconciliation.title')}</div>

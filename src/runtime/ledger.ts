@@ -18,8 +18,18 @@ export const ledger = {
   todayTotal(): number {
     const today = new Date().toDateString();
     return this.all()
-      .filter(e => new Date(e.receipt.created_at).toDateString() === today)
+      .filter(e => e.receipt.status === 'completed' && new Date(e.receipt.created_at).toDateString() === today)
       .reduce((s, e) => s + e.receipt.amount, 0);
+  },
+
+  monthTotal(): number {
+    const now = new Date();
+    return this.all()
+      .filter(e => {
+        const created = new Date(e.receipt.created_at);
+        return e.receipt.status === 'completed' && created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+      })
+      .reduce((sum, entry) => sum + entry.receipt.amount, 0);
   },
 
   stats(quoteCurrency = 'USD') {

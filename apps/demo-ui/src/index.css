@@ -427,3 +427,20 @@ body { background: radial-gradient(circle at 82% 12%, rgba(28, 52, 76, .28), tra
   .accounting-query form { grid-template-columns:1fr; }.accounting-query form .btn { width:100%; }
   .settings-contact { align-items:flex-start; flex-direction:column; }.settings-contact a { width:100%; min-width:0; }
 }
+.policy-preference-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:16px 0; }
+.policy-preference { appearance:none; text-align:left; color:var(--text); background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:15px; cursor:pointer; min-height:82px; }
+.policy-preference:hover { border-color:var(--yellow-border); }
+.policy-preference.selected { border-color:var(--yellow); background:var(--yellow-bg); box-shadow:inset 3px 0 0 var(--yellow); }
+.policy-preference b,.policy-preference span { display:block; }
+.policy-preference span { color:var(--muted); font-size:12px; line-height:1.5; margin-top:6px; }
+.policy-limit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.policy-limit { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); }
+.policy-limit span:first-child,.policy-limit b,.policy-limit small { display:block; }
+.policy-limit b { font-size:13px; }
+.policy-limit small { color:var(--muted); font-size:11px; margin-top:4px; line-height:1.4; }
+.policy-money { display:flex; align-items:center; gap:7px; flex:0 0 145px; }
+.policy-money input { text-align:right; min-width:0; }
+.policy-money em { color:var(--muted); font-size:11px; font-style:normal; }
+.policy-boundary { margin-top:12px; padding:10px 12px; border:1px solid var(--yellow-border); background:var(--yellow-bg); border-radius:var(--radius-sm); color:var(--yellow); font-size:12px; }
+.policy-save { display:flex; justify-content:flex-end; margin-top:14px; }
+@media (max-width:900px) { .policy-preference-grid,.policy-limit-grid { grid-template-columns:1fr; } }

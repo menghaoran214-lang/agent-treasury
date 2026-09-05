@@ -57,6 +57,14 @@ describe('Treasury Vertical Slice', () => {
     expect(result.receipt.status).toBe('pending');
   });
 
+  it('hard-blocks a payment that would exceed the daily budget', async () => {
+    const policy = { ...BASE_POLICY, strategy: PurchaseStrategy.ECONOMY, daily_budget: 0.05 };
+    const result = await runTreasury(makeRequest(), { policy, providers: STRATEGY_PROVIDERS });
+    expect(result.selection.final_approval).toBe('blocked');
+    expect(result.receipt.status).toBe('blocked');
+    expect(result.selection.policy_decision.reason).toContain('daily budget');
+  });
+
   it('selects provider by balanced strategy score', async () => {
     const req = makeRequest();
     const result = await runTreasury(req, {

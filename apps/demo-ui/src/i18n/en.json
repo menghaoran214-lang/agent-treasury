@@ -229,6 +229,12 @@
     "language": "Interface Language",
     "notification": "Notification Mode",
     "saved": "Saved",
+    "policy": {
+      "title": "Procurement Preference & Payment Boundaries", "description": "Choose how the AI ranks compliant vendors, then set automatic payment, human approval, and hard-block boundaries.",
+      "strategy": { "performance": "Quality First", "performanceDesc": "Prioritize quality, reliability, and response time", "balanced": "Balanced", "balancedDesc": "Balance price and quality (recommended)", "economy": "Price First", "economyDesc": "Prefer the lowest-priced option that meets requirements" },
+      "limit": { "auto_pay_limit": "Require approval above", "auto_pay_limitDesc": "Payments at or below this amount may run automatically", "single_transaction_limit": "Hard block per payment", "single_transaction_limitDesc": "Anything higher is blocked and cannot be approved around", "daily_budget": "Daily budget", "daily_budgetDesc": "Spending boundary for one day", "monthly_budget": "Monthly budget", "monthly_budgetDesc": "Spending boundary for one month" },
+      "boundary": "Preference only changes ranking among allowed offers. It can never override payment limits or security policy.", "save": "Save Procurement & Payment Policy", "saving": "Saving…", "error": "Failed to save policy"
+    },
     "contact": { "title": "Contact & Support", "description": "Questions or feedback? Contact me on X.", "open": "Contact on X" },
     "reconciliation": {
       "title": "Payment Reconciliation", "description": "Only uncertain payments appear here. They stay frozen and are never retried automatically.", "empty": "No payments require manual review",

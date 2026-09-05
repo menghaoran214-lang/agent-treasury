@@ -229,6 +229,12 @@
     "language": "界面语言",
     "notification": "通知模式",
     "saved": "已保存",
+    "policy": {
+      "title": "采购偏好与支付边界", "description": "选择 AI 在合规供应商中的采购倾向，并设置自动支付、人工审批和硬阻断边界。",
+      "strategy": { "performance": "质量优先", "performanceDesc": "优先质量、稳定性与响应速度", "balanced": "平衡", "balancedDesc": "在价格与质量之间取得平衡（推荐）", "economy": "价格优先", "economyDesc": "优先选择满足要求的低价方案" },
+      "limit": { "auto_pay_limit": "超过此金额需审批", "auto_pay_limitDesc": "不高于此金额可自动支付", "single_transaction_limit": "单笔硬阻断上限", "single_transaction_limitDesc": "超过后直接阻断，不能用人工审批绕过", "daily_budget": "每日预算", "daily_budgetDesc": "当天允许使用的预算边界", "monthly_budget": "每月预算", "monthly_budgetDesc": "当月允许使用的预算边界" },
+      "boundary": "采购偏好只影响允许范围内的排序，任何偏好都不能绕过支付上限和安全策略。", "save": "保存采购与支付策略", "saving": "正在保存…", "error": "策略保存失败"
+    },
     "contact": { "title": "联系与支持", "description": "使用中遇到问题或希望提供建议，可以通过 X 联系我。", "open": "在 X 上联系" },
     "reconciliation": {
       "title": "支付结果核查", "description": "只处理结果不确定的支付。核查前系统保持冻结，绝不自动重试。", "empty": "没有需要人工核查的支付",
