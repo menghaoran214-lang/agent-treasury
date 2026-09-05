@@ -1,5 +1,18 @@
 # API Spec — Agent Treasury MCP
 
+## Demo HTTP: counterparties and accounting
+
+- `GET /api/counterparties` lists local counterparties.
+- `POST /api/counterparties` creates or updates editable identity fields.
+- `GET /api/counterparties/:id/history` returns its append-only edit history.
+- `GET /api/ledger/:purchaseId/accounting` returns metadata and audit history.
+- `POST /api/ledger/:purchaseId/accounting` updates allowed accounting fields
+  and appends a revision. It cannot update transaction facts.
+
+`GET /api/ledger` enriches each entry with optional `counterparty` and
+`accounting` objects. Spend totals exclude entries whose accounting metadata sets
+`include_in_spend` to false; the entries themselves are never hidden.
+
 ## Transport
 
 JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.

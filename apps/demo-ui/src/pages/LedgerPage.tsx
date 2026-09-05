@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { t, i18n } from '../i18n';
-import { ledgerApi, LedgerEntry, LedgerStats } from '../api/client';
+import { ledgerApi, counterpartyApi, LedgerEntry, LedgerStats } from '../api/client';
 
 interface Props { onViewReceipt: (receiptId: string) => void; }
 
 export default function LedgerPage({ onViewReceipt }: Props) {
   const [data, setData] = useState<{ entries: LedgerEntry[]; stats: LedgerStats } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     ledgerApi.get()
@@ -20,6 +22,24 @@ export default function LedgerPage({ onViewReceipt }: Props) {
   const entries = data?.entries ?? [];
   const stats = data?.stats;
   const currencyTotals = stats ? Object.entries(stats.totalsByCurrency ?? {}) : [];
+
+  async function saveAccounting() {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      const counterpartyId = editing.counterpartyId || `cp-${editing.purchaseId}`;
+      await counterpartyApi.upsert({
+        id: counterpartyId, system_name: editing.systemName, display_name: editing.displayName || editing.systemName,
+        type: editing.type, aliases: [], tags: [], notes: '', default_category: editing.category,
+      });
+      await ledgerApi.updateAccounting(editing.purchaseId, {
+        counterparty_id: counterpartyId, category: editing.category, note: editing.note,
+        is_internal_transfer: editing.internal, include_in_spend: !editing.internal,
+      });
+      setData(await ledgerApi.get());
+      setEditing(null);
+    } finally { setSaving(false); }
+  }
 
   return (
     <div>
@@ -73,11 +93,16 @@ export default function LedgerPage({ onViewReceipt }: Props) {
                   const item = entry.receipt ?? entry;
                   const receiptId = String(item.id ?? item.receipt_id ?? '—');
                   const vendorName = item.vendor?.name ?? item.vendor_name ?? '—';
+                  const purchaseId = String(item.purchase_id ?? entry.request_snapshot?.id ?? entry.purchase_id ?? '');
+                  const displayName = entry.counterparty?.display_name ?? vendorName;
                   const status = String(item.status ?? 'unknown').toUpperCase();
                   return (
                   <tr key={receiptId} style={{ cursor: 'pointer' }} onClick={() => onViewReceipt(receiptId)}>
                     <td className="mono" style={{ fontSize: 12 }}>{receiptId.slice(0, 10)}…</td>
-                    <td>{vendorName}</td>
+                    <td>
+                      <div>{displayName}</div>
+                      {entry.accounting?.category && <div className="text-muted" style={{ fontSize: 11 }}>{entry.accounting.category}</div>}
+                    </td>
                     <td className="mono">{Number(item.amount ?? 0).toFixed(2)} {item.currency ?? 'USDC'}</td>
                     <td>
                       <span className={`badge ${item.approval_type === 'auto' ? 'badge-green' : 'badge-yellow'}`}>
@@ -102,6 +127,12 @@ export default function LedgerPage({ onViewReceipt }: Props) {
                     </td>
                     <td className="mono text-muted" style={{ fontSize: 12 }}>
                       {new Date(item.created_at).toLocaleString(i18n.lang === 'zh-CN' ? 'zh-CN' : 'en-US')}
+                      <button className="btn btn-ghost" style={{ marginLeft: 8, padding: '4px 8px' }} onClick={(event) => {
+                        event.stopPropagation();
+                        setEditing({ purchaseId, counterpartyId: entry.counterparty?.id ?? '', systemName: vendorName,
+                          displayName, type: entry.counterparty?.type ?? 'unknown', category: entry.accounting?.category ?? 'uncategorized',
+                          note: entry.accounting?.note ?? '', internal: entry.accounting?.is_internal_transfer ?? false });
+                      }}>{t('ledger.edit')}</button>
                     </td>
                   </tr>
                   );
@@ -111,6 +142,19 @@ export default function LedgerPage({ onViewReceipt }: Props) {
           )}
         </div>
       </div>
+      {editing && <div className="modal-overlay" onClick={() => setEditing(null)}>
+        <div className="modal" onClick={event => event.stopPropagation()}>
+          <div className="modal-header"><div className="modal-title">{t('ledger.accounting.title')}</div><button className="modal-close" onClick={() => setEditing(null)}>×</button></div>
+          <div className="form-group"><label>{t('ledger.accounting.name')}</label><input className="form-input" value={editing.displayName} onChange={e => setEditing({ ...editing, displayName: e.target.value })} /></div>
+          <div className="form-group"><label>{t('ledger.accounting.type')}</label><select className="form-select" value={editing.type} onChange={e => setEditing({ ...editing, type: e.target.value })}>
+            {['supplier','saas_provider','ai_agent','person','own_wallet','unknown'].map(type => <option key={type} value={type}>{t(`ledger.counterparty.${type}`)}</option>)}
+          </select></div>
+          <div className="form-group"><label>{t('ledger.accounting.category')}</label><input className="form-input" value={editing.category} onChange={e => setEditing({ ...editing, category: e.target.value })} /></div>
+          <div className="form-group"><label>{t('ledger.accounting.note')}</label><textarea className="form-input" value={editing.note} onChange={e => setEditing({ ...editing, note: e.target.value })} /></div>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={editing.internal} onChange={e => setEditing({ ...editing, internal: e.target.checked })} />{t('ledger.accounting.internal')}</label>
+          <div className="modal-footer"><button className="btn btn-ghost" onClick={() => setEditing(null)}>{t('common.cancel')}</button><button className="btn btn-primary" disabled={saving} onClick={saveAccounting}>{saving ? t('common.saving') : t('common.save')}</button></div>
+        </div>
+      </div>}
     </div>
   );
 }

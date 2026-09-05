@@ -66,10 +66,10 @@ Last synchronized: 2026-09-05
 
 ### Product V2 — Agent Accounting Foundation
 
-- [ ] Counterparty model: supplier, SaaS, AI agent, person, own wallet, unknown
-- [ ] Immutable transaction facts separated from editable accounting metadata
-- [ ] Audited edits for aliases, categories, tags, notes, projects, and cost centers
-- [ ] Internal-transfer classification excluded from consumption statistics by default
+- [x] Counterparty model: supplier, SaaS, AI agent, person, own wallet, unknown
+- [x] Immutable transaction facts separated from editable accounting metadata
+- [x] Audited edits for aliases, categories, tags, notes, projects, and cost centers
+- [x] Internal-transfer classification excluded from consumption statistics by default
 - [ ] Supplier import preview, deduplication, and editable naming
 - [ ] Multi-currency display with original asset, quote currency, and FX snapshot
 - [ ] Refined ledger details, monthly/yearly reports, and natural-language queries

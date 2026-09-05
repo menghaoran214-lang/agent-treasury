@@ -145,6 +145,10 @@
     "status.FAILED": "失败",
     "approval.auto": "自动",
     "approval.human_required": "人工",
+    "approval.blocked": "系统拦截",
+    "edit": "编辑记账信息",
+    "accounting": { "title": "编辑记账信息", "name": "显示名称 / 别名", "type": "对方类型", "category": "记账分类", "note": "备注", "internal": "这是我自己账户之间的内部转账（不计入消费）" },
+    "counterparty": { "supplier": "供应商", "saas_provider": "SaaS 服务商", "ai_agent": "AI Agent", "person": "个人", "own_wallet": "自己的钱包", "unknown": "未识别" },
     "empty": "暂无账单记录"
   },
   "receipt": {
@@ -259,6 +263,7 @@
     "confirm": "确认",
     "cancel": "取消",
     "save": "保存",
+    "saving": "保存中...",
     "delete": "删除",
     "edit": "编辑",
     "back": "返回",

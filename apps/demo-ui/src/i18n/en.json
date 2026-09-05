@@ -145,6 +145,10 @@
     "status.FAILED": "Failed",
     "approval.auto": "Auto",
     "approval.human_required": "Human",
+    "approval.blocked": "System Blocked",
+    "edit": "Edit accounting",
+    "accounting": { "title": "Edit Accounting Details", "name": "Display Name / Alias", "type": "Counterparty Type", "category": "Category", "note": "Note", "internal": "This is an internal transfer between my own accounts (exclude from spending)" },
+    "counterparty": { "supplier": "Supplier", "saas_provider": "SaaS Provider", "ai_agent": "AI Agent", "person": "Person", "own_wallet": "Own Wallet", "unknown": "Unknown" },
     "empty": "No ledger entries"
   },
   "receipt": {
@@ -259,6 +263,7 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "save": "Save",
+    "saving": "Saving...",
     "delete": "Delete",
     "edit": "Edit",
     "back": "Back",

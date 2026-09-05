@@ -77,6 +77,21 @@ export interface LedgerEntry {
   approval_type: string;
   risk: string;
   created_at: string;
+  accounting?: AccountingMetadata;
+  counterparty?: Counterparty;
+}
+
+export interface Counterparty {
+  id: string; system_name: string; display_name: string;
+  type: 'supplier' | 'saas_provider' | 'ai_agent' | 'person' | 'own_wallet' | 'unknown';
+  aliases: string[]; tags: string[]; notes: string; default_category: string;
+  created_at: string; updated_at: string;
+}
+
+export interface AccountingMetadata {
+  purchase_id: string; counterparty_id: string | null; category: string; subcategory: string;
+  tags: string[]; note: string; project: string; department: string; cost_center: string;
+  is_internal_transfer: boolean; include_in_spend: boolean; reimbursable: boolean; updated_at: string;
 }
 
 export interface LedgerStats {
@@ -96,6 +111,11 @@ export interface LedgerResponse {
 
 export const ledgerApi = {
   get: (filter?: object) => get<LedgerResponse>('/ledger' + (filter ? '?filter=' + encodeURIComponent(JSON.stringify(filter)) : '')),
+  updateAccounting: (purchaseId: string, patch: Partial<AccountingMetadata>) => post<{ metadata: AccountingMetadata; history: unknown[] }>(`/ledger/${purchaseId}/accounting`, patch),
+};
+
+export const counterpartyApi = {
+  upsert: (counterparty: Omit<Counterparty, 'created_at' | 'updated_at'>) => post<Counterparty>('/counterparties', counterparty),
 };
 
 // ─── Receipt ─────────────────────────────────────────────────────────────────

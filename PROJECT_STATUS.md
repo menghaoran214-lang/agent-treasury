@@ -34,6 +34,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Binance provider integration through the official `baw wallet send` command, including input validation, idempotency, and UNKNOWN-state handling.
 - UI V2 routes: live workspace, pending approvals, ledger, receipts, vendors, analytics, and settings.
 - Immediate Simplified Chinese / English switching across all functional UI copy.
+- V2 counterparties, editable accounting metadata, audit history, and internal-transfer exclusion from spend totals.
 
 ## What Is Not Yet Production-Ready
 

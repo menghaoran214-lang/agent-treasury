@@ -1,5 +1,23 @@
 # Database — Agent Treasury
 
+## Product V2 accounting tables
+
+`counterparties` stores user-facing identities independently from raw wallet or
+vendor identifiers. Supported types are supplier, SaaS provider, AI agent,
+person, own wallet, and unknown. Display name, aliases, tags, notes, and default
+category are editable.
+
+`accounting_metadata` stores the editable interpretation of a purchase:
+counterparty, category, subcategory, tags, note, project, department, cost
+center, reimbursement flag, and internal-transfer/spend treatment.
+
+`accounting_revisions` appends a before/after snapshot and changed-field list on
+every meaningful metadata edit. `counterparty_revisions` provides the same
+append-only history for display names, aliases, tags, notes, and type changes.
+Receipt, amount, currency, payment reference,
+chain facts, and original ledger snapshots remain immutable. Internal transfers
+remain visible in the ledger but default to `include_in_spend = 0`.
+
 ## Storage Engine
 
 SQLite via `better-sqlite3`. DB path configured via `TREASURY_DB_PATH` env var (default: `./data/treasury.db`).

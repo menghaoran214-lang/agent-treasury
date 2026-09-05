@@ -61,6 +61,56 @@ export const PaymentState = {
 } as const;
 export type PaymentState = (typeof PaymentState)[keyof typeof PaymentState];
 
+export const CounterpartyType = {
+  SUPPLIER: 'supplier',
+  SAAS_PROVIDER: 'saas_provider',
+  AI_AGENT: 'ai_agent',
+  PERSON: 'person',
+  OWN_WALLET: 'own_wallet',
+  UNKNOWN: 'unknown',
+} as const;
+export type CounterpartyType = (typeof CounterpartyType)[keyof typeof CounterpartyType];
+
+export interface Counterparty {
+  id: string;
+  system_name: string;
+  display_name: string;
+  type: CounterpartyType;
+  aliases: string[];
+  tags: string[];
+  notes: string;
+  default_category: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** User-editable interpretation; it never replaces receipt or chain facts. */
+export interface AccountingMetadata {
+  purchase_id: string;
+  counterparty_id: string | null;
+  category: string;
+  subcategory: string;
+  tags: string[];
+  note: string;
+  project: string;
+  department: string;
+  cost_center: string;
+  is_internal_transfer: boolean;
+  include_in_spend: boolean;
+  reimbursable: boolean;
+  updated_at: string;
+}
+
+export interface AccountingRevision {
+  id: string;
+  purchase_id: string;
+  changed_fields: string[];
+  before: AccountingMetadata | null;
+  after: AccountingMetadata;
+  actor: string;
+  created_at: string;
+}
+
 // Result returned by PaymentProvider.execute() — includes explicit payment state
 export interface PaymentProviderResult {
   success: boolean;

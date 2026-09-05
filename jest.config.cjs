@@ -15,4 +15,7 @@ module.exports = {
   transform: { '^.+\\.tsx?$': ['ts-jest', { useESM: true }] },
   testMatch: ['**/tests/**/*.test.ts'],
   testTimeout: 30000,
+  // The SQLite integration tests intentionally share one configured database.
+  // Run suites serially so one suite's cleanup cannot race another suite.
+  maxWorkers: 1,
 };

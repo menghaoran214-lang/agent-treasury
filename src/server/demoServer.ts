@@ -13,7 +13,7 @@ import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
 import { REAL_PAYMENT_EVIDENCE } from '../config/realPaymentEvidence.js';
 import { getGate5VendorsForResource, GATE5_VENDORS } from '../providers/mockProviders.js';
 import type { PurchaseRequest } from '../domain/types.js';
-import { PurchaseStrategy } from '../domain/types.js';
+import { PurchaseStrategy, CounterpartyType } from '../domain/types.js';
 import type { Policy } from '../domain/types.js';
 
 const app = express();
@@ -228,6 +228,45 @@ app.get('/api/ledger', async (_req, res) => {
   } catch {
     res.status(500).json({ error: 'Failed to load ledger' });
   }
+});
+
+const counterpartyTypes = new Set(Object.values(CounterpartyType));
+
+app.get('/api/counterparties', (_req, res) => {
+  res.json({ counterparties: sqliteStorage.listCounterparties() });
+});
+
+app.get('/api/counterparties/:id/history', (req, res) => {
+  res.json({ history: sqliteStorage.getCounterpartyHistory(req.params.id) });
+});
+
+app.post('/api/counterparties', (req, res) => {
+  const body = req.body as Record<string, unknown>;
+  if (!body.id || !body.system_name || !body.display_name || !counterpartyTypes.has(body.type as never)) {
+    res.status(400).json({ error: 'id, system_name, display_name and a valid type are required' }); return;
+  }
+  const counterparty = sqliteStorage.upsertCounterparty({
+    id: String(body.id), system_name: String(body.system_name), display_name: String(body.display_name),
+    type: body.type as typeof CounterpartyType[keyof typeof CounterpartyType],
+    aliases: Array.isArray(body.aliases) ? body.aliases.map(String) : [], tags: Array.isArray(body.tags) ? body.tags.map(String) : [],
+    notes: String(body.notes ?? ''), default_category: String(body.default_category ?? ''),
+  });
+  res.json(counterparty);
+});
+
+app.get('/api/ledger/:purchaseId/accounting', (req, res) => {
+  res.json({ metadata: sqliteStorage.getAccounting(req.params.purchaseId), history: sqliteStorage.getAccountingHistory(req.params.purchaseId) });
+});
+
+app.post('/api/ledger/:purchaseId/accounting', (req, res) => {
+  const allowed = ['counterparty_id', 'category', 'subcategory', 'tags', 'note', 'project', 'department', 'cost_center', 'is_internal_transfer', 'include_in_spend', 'reimbursable'];
+  const patch = Object.fromEntries(Object.entries(req.body as Record<string, unknown>).filter(([key]) => allowed.includes(key)));
+  if (patch.counterparty_id && !sqliteStorage.getCounterparty(String(patch.counterparty_id))) {
+    res.status(400).json({ error: 'Unknown counterparty' }); return;
+  }
+  if (patch.tags != null && !Array.isArray(patch.tags)) { res.status(400).json({ error: 'tags must be an array' }); return; }
+  const metadata = sqliteStorage.updateAccounting(req.params.purchaseId, patch, 'user');
+  res.json({ metadata, history: sqliteStorage.getAccountingHistory(req.params.purchaseId) });
 });
 
 // ─── Receipt ─────────────────────────────────────────────────────────────────

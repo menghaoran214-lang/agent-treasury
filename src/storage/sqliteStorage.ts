@@ -5,7 +5,7 @@
  */
 // @ts-ignore -- esModuleInterop + bundler moduleResolution causes false positive on .d.cts
 import Database from 'better-sqlite3';
-import type { Receipt, LedgerEntry, Policy } from '../domain/types.js';
+import type { Receipt, LedgerEntry, Policy, Counterparty, CounterpartyType, AccountingMetadata, AccountingRevision } from '../domain/types.js';
 import { getDatabasePath } from '../config/runtimeConfig.js';
 
 const _db = (() => {
@@ -88,6 +88,51 @@ const _db = (() => {
     data_json   TEXT NOT NULL DEFAULT '{}',
     created_at  TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS counterparties (
+    id TEXT PRIMARY KEY,
+    system_name TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'unknown',
+    aliases_json TEXT NOT NULL DEFAULT '[]',
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    notes TEXT NOT NULL DEFAULT '',
+    default_category TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS accounting_metadata (
+    purchase_id TEXT PRIMARY KEY,
+    counterparty_id TEXT,
+    category TEXT NOT NULL DEFAULT 'uncategorized',
+    subcategory TEXT NOT NULL DEFAULT '',
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    note TEXT NOT NULL DEFAULT '',
+    project TEXT NOT NULL DEFAULT '',
+    department TEXT NOT NULL DEFAULT '',
+    cost_center TEXT NOT NULL DEFAULT '',
+    is_internal_transfer INTEGER NOT NULL DEFAULT 0,
+    include_in_spend INTEGER NOT NULL DEFAULT 1,
+    reimbursable INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(counterparty_id) REFERENCES counterparties(id)
+  );
+  CREATE TABLE IF NOT EXISTS accounting_revisions (
+    id TEXT PRIMARY KEY,
+    purchase_id TEXT NOT NULL,
+    changed_fields_json TEXT NOT NULL,
+    before_json TEXT,
+    after_json TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS counterparty_revisions (
+    id TEXT PRIMARY KEY,
+    counterparty_id TEXT NOT NULL,
+    before_json TEXT,
+    after_json TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `);
   const paymentColumns = new Set(((db as unknown as { prepare(s: string): { all(): Array<{ name: string }> } }).prepare('PRAGMA table_info(payment_records)').all()).map(c => c.name));
   const routeColumns: Record<string, string> = {
@@ -126,6 +171,20 @@ function parsePurchase(r: PurchaseRow) {
     fair_price: r.fair_price, approval_type: r.approval_type,
     policy_snapshot: r.policy_snapshot ? (() => { try { return JSON.parse(r.policy_snapshot); } catch { return null; } })() : null,
     receipt_id: r.receipt_id,
+  };
+}
+
+function jsonArray(value: string): string[] {
+  try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.map(String) : []; } catch { return []; }
+}
+
+function parseAccounting(row: Record<string, unknown>): AccountingMetadata {
+  return {
+    purchase_id: String(row.purchase_id), counterparty_id: row.counterparty_id ? String(row.counterparty_id) : null,
+    category: String(row.category), subcategory: String(row.subcategory), tags: jsonArray(String(row.tags_json)),
+    note: String(row.note), project: String(row.project), department: String(row.department), cost_center: String(row.cost_center),
+    is_internal_transfer: Boolean(row.is_internal_transfer), include_in_spend: Boolean(row.include_in_spend),
+    reimbursable: Boolean(row.reimbursable), updated_at: String(row.updated_at),
   };
 }
 
@@ -230,9 +289,29 @@ export const sqliteStorage = {
     });
   },
 
-  getAllEntries(): LedgerEntry[] {
-    const rows = _db.prepare('SELECT receipt_json FROM ledger_entries ORDER BY created_at DESC').all() as Array<{ receipt_json: string }>;
-    return rows.map(r => { try { return JSON.parse(r.receipt_json) as LedgerEntry; } catch { return null; } }).filter(Boolean) as LedgerEntry[];
+  getAllEntries(): Array<LedgerEntry & { accounting?: AccountingMetadata; counterparty?: Counterparty }> {
+    const rows = _db.prepare(`
+      SELECT l.receipt_json, a.*, c.system_name, c.display_name, c.type AS counterparty_type,
+             c.aliases_json, c.tags_json AS counterparty_tags_json, c.notes AS counterparty_notes,
+             c.default_category, c.created_at AS counterparty_created_at, c.updated_at AS counterparty_updated_at
+      FROM ledger_entries l
+      LEFT JOIN accounting_metadata a ON a.purchase_id = l.purchase_id
+      LEFT JOIN counterparties c ON c.id = a.counterparty_id
+      ORDER BY l.created_at DESC
+    `).all() as Array<Record<string, unknown>>;
+    return rows.map(row => {
+      try {
+        const entry = JSON.parse(String(row.receipt_json)) as LedgerEntry & { accounting?: AccountingMetadata; counterparty?: Counterparty };
+        if (row.category != null) entry.accounting = parseAccounting(row);
+        if (row.display_name != null && row.counterparty_id) entry.counterparty = {
+          id: String(row.counterparty_id), system_name: String(row.system_name), display_name: String(row.display_name),
+          type: String(row.counterparty_type) as CounterpartyType, aliases: jsonArray(String(row.aliases_json)),
+          tags: jsonArray(String(row.counterparty_tags_json)), notes: String(row.counterparty_notes),
+          default_category: String(row.default_category), created_at: String(row.counterparty_created_at), updated_at: String(row.counterparty_updated_at),
+        };
+        return entry;
+      } catch { return null; }
+    }).filter(Boolean) as Array<LedgerEntry & { accounting?: AccountingMetadata; counterparty?: Counterparty }>;
   },
 
   stats() {
@@ -240,9 +319,85 @@ export const sqliteStorage = {
     const completed = (_db.prepare("SELECT COUNT(*) as c FROM purchases WHERE status = 'completed'").get() as { c: number }).c;
     const pending = (_db.prepare("SELECT COUNT(*) as c FROM purchases WHERE status = 'pending'").get() as { c: number }).c;
     const ledger = (_db.prepare('SELECT COUNT(*) as c FROM ledger_entries').get() as { c: number }).c;
-    const totalSpend = (_db.prepare("SELECT SUM(amount) as s FROM ledger_entries WHERE status = 'completed'").get() as { s: number | null }).s ?? 0;
-    const totalsByCurrency = Object.fromEntries((_db.prepare("SELECT currency, SUM(amount) AS amount FROM ledger_entries WHERE status = 'completed' GROUP BY currency ORDER BY currency").all() as Array<{ currency: string; amount: number }>).map(row => [row.currency, row.amount]));
-    return { purchases, completed, pending, ledger, totalSpend, totalsByCurrency, totalCount: ledger };
+    const spendWhere = "l.status = 'completed' AND COALESCE(a.include_in_spend, 1) = 1";
+    const totalSpend = (_db.prepare(`SELECT SUM(l.amount) as s FROM ledger_entries l LEFT JOIN accounting_metadata a ON a.purchase_id = l.purchase_id WHERE ${spendWhere}`).get() as { s: number | null }).s ?? 0;
+    const totalsByCurrency = Object.fromEntries((_db.prepare(`SELECT l.currency, SUM(l.amount) AS amount FROM ledger_entries l LEFT JOIN accounting_metadata a ON a.purchase_id = l.purchase_id WHERE ${spendWhere} GROUP BY l.currency ORDER BY l.currency`).all() as Array<{ currency: string; amount: number }>).map(row => [row.currency, row.amount]));
+    const internalTransfers = (_db.prepare("SELECT COUNT(*) AS c FROM accounting_metadata WHERE is_internal_transfer = 1").get() as { c: number }).c;
+    return { purchases, completed, pending, ledger, totalSpend, totalsByCurrency, internalTransfers, totalCount: ledger };
+  },
+
+  upsertCounterparty(input: Omit<Counterparty, 'created_at' | 'updated_at'>): Counterparty {
+    const now = new Date().toISOString();
+    const before = this.getCounterparty(input.id);
+    const identityChanged = !before || ['display_name', 'type', 'aliases', 'tags', 'notes', 'default_category'].some(key =>
+      JSON.stringify(before[key as keyof Counterparty]) !== JSON.stringify(input[key as keyof typeof input]),
+    );
+    const save = _db.transaction(() => {
+      _db.prepare(`INSERT INTO counterparties
+        (id, system_name, display_name, type, aliases_json, tags_json, notes, default_category, created_at, updated_at)
+        VALUES (:id,:system_name,:display_name,:type,:aliases_json,:tags_json,:notes,:default_category,:created_at,:updated_at)
+        ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name,type=excluded.type,aliases_json=excluded.aliases_json,
+        tags_json=excluded.tags_json,notes=excluded.notes,default_category=excluded.default_category,updated_at=excluded.updated_at`).run({
+          ...input, aliases_json: JSON.stringify(input.aliases), tags_json: JSON.stringify(input.tags), created_at: before?.created_at ?? now, updated_at: now,
+        });
+      const after = this.getCounterparty(input.id)!;
+      if (identityChanged) _db.prepare(`INSERT INTO counterparty_revisions (id,counterparty_id,before_json,after_json,actor,created_at) VALUES (?,?,?,?,?,?)`).run(
+        `cp-rev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, input.id, before ? JSON.stringify(before) : null, JSON.stringify(after), 'user', now,
+      );
+    });
+    save();
+    return this.getCounterparty(input.id)!;
+  },
+
+  getCounterparty(id: string): Counterparty | null {
+    const row = _db.prepare('SELECT * FROM counterparties WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return { id: String(row.id), system_name: String(row.system_name), display_name: String(row.display_name),
+      type: String(row.type) as CounterpartyType, aliases: jsonArray(String(row.aliases_json)), tags: jsonArray(String(row.tags_json)),
+      notes: String(row.notes), default_category: String(row.default_category), created_at: String(row.created_at), updated_at: String(row.updated_at) };
+  },
+
+  listCounterparties(): Counterparty[] {
+    return (_db.prepare('SELECT id FROM counterparties ORDER BY display_name').all() as Array<{ id: string }>).map(row => this.getCounterparty(row.id)!);
+  },
+
+  getCounterpartyHistory(id: string): Array<{ id: string; counterparty_id: string; before: Counterparty | null; after: Counterparty; actor: string; created_at: string }> {
+    return (_db.prepare('SELECT * FROM counterparty_revisions WHERE counterparty_id = ? ORDER BY created_at DESC').all(id) as Array<Record<string, unknown>>).map(row => ({
+      id: String(row.id), counterparty_id: String(row.counterparty_id), before: row.before_json ? JSON.parse(String(row.before_json)) : null,
+      after: JSON.parse(String(row.after_json)), actor: String(row.actor), created_at: String(row.created_at),
+    }));
+  },
+
+  getAccounting(purchaseId: string): AccountingMetadata | null {
+    const row = _db.prepare('SELECT * FROM accounting_metadata WHERE purchase_id = ?').get(purchaseId) as Record<string, unknown> | undefined;
+    return row ? parseAccounting(row) : null;
+  },
+
+  updateAccounting(purchaseId: string, patch: Partial<Omit<AccountingMetadata, 'purchase_id' | 'updated_at'>>, actor = 'user'): AccountingMetadata {
+    const before = this.getAccounting(purchaseId);
+    const now = new Date().toISOString();
+    const after: AccountingMetadata = { purchase_id: purchaseId, counterparty_id: null, category: 'uncategorized', subcategory: '', tags: [], note: '', project: '', department: '', cost_center: '', is_internal_transfer: false, include_in_spend: true, reimbursable: false, ...before, ...patch, updated_at: now };
+    if (after.is_internal_transfer) after.include_in_spend = false;
+    const changed = Object.keys(patch).filter(key => JSON.stringify(before?.[key as keyof AccountingMetadata]) !== JSON.stringify(after[key as keyof AccountingMetadata]));
+    const save = _db.transaction(() => {
+      _db.prepare(`INSERT OR REPLACE INTO accounting_metadata
+        (purchase_id,counterparty_id,category,subcategory,tags_json,note,project,department,cost_center,is_internal_transfer,include_in_spend,reimbursable,updated_at)
+        VALUES (:purchase_id,:counterparty_id,:category,:subcategory,:tags_json,:note,:project,:department,:cost_center,:is_internal_transfer,:include_in_spend,:reimbursable,:updated_at)`).run({
+          ...after, tags_json: JSON.stringify(after.tags), is_internal_transfer: Number(after.is_internal_transfer), include_in_spend: Number(after.include_in_spend), reimbursable: Number(after.reimbursable),
+        });
+      if (changed.length) _db.prepare(`INSERT INTO accounting_revisions (id,purchase_id,changed_fields_json,before_json,after_json,actor,created_at) VALUES (?,?,?,?,?,?,?)`).run(
+        `rev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, purchaseId, JSON.stringify(changed), before ? JSON.stringify(before) : null, JSON.stringify(after), actor, now,
+      );
+    });
+    save();
+    return after;
+  },
+
+  getAccountingHistory(purchaseId: string): AccountingRevision[] {
+    return (_db.prepare('SELECT * FROM accounting_revisions WHERE purchase_id = ? ORDER BY created_at DESC').all(purchaseId) as Array<Record<string, unknown>>).map(row => ({
+      id: String(row.id), purchase_id: String(row.purchase_id), changed_fields: jsonArray(String(row.changed_fields_json)),
+      before: row.before_json ? JSON.parse(String(row.before_json)) : null, after: JSON.parse(String(row.after_json)), actor: String(row.actor), created_at: String(row.created_at),
+    }));
   },
 
   clearLedgerEntries(): void {
