@@ -11,7 +11,7 @@ export function createReceipt(params: {
   policyDecision: PolicyDecision;
   approvalType: ApprovalType;
   paymentReference?: string;
-  paymentProvider?: 'mock' | 'binance';
+  paymentProvider?: string;
   paymentState?: string;
   status: PurchaseStatus;
 }): Receipt {

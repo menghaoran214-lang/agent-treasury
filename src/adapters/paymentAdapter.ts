@@ -7,7 +7,7 @@ export type { PaymentProviderResult };
 
 // PaymentProvider interface — implement to add new providers
 export interface PaymentProvider {
-  readonly name: 'mock' | 'binance';
+  readonly name: string;
   execute(request: PurchaseRequest, provider: ProviderOffer, approval: ApprovalType): Promise<PaymentProviderResult>;
 }
 

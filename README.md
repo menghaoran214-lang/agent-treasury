@@ -13,7 +13,7 @@ Treasury sits between your agents and the outside world of paid resources (marke
 3. **Fair price check** — tier-based range validation
 4. **Security gate** — risk assessment, provider known-check, SEVERE_OVERPRICE guard
 5. **Policy engine** — enforces auto-pay limits, categories, budgets
-6. **Payment** — `PaymentProvider` abstraction: `mock` (default) or `binance` via `@binance/agentic-wallet` CLI
+6. **Payment** — pluggable `PaymentProvider`, `PaymentRail`, and `WalletAdapter` layers; Binance Agentic Wallet currently broadcasts the verified BSC-USDT direct-transfer rail
 7. **Receipt** — full audit trail with "why selected" reasoning
 8. **Ledger** — searchable history of all purchases (SQLite persistence)
 
@@ -78,7 +78,10 @@ src/
     ledger.ts               — SQLite-backed ledger
     treasury.ts             — orchestration
   adapters/
-    paymentAdapter.ts       — mock payment (x402 at Gate 4)
+    paymentAdapter.ts       — provider dispatch and mock provider
+    paymentRail.ts          — payment-method extension contract
+    walletAdapter.ts        — wallet signing/broadcast extension contract
+    binancePaymentProvider.ts — policy-safe Binance composition
   mcp/
     server.ts               — MCP Server (Gate 2)
   storage/
@@ -101,11 +104,11 @@ tests/
 | 4 | Binance payment adapter and hardening | ✅ Code complete |
 | 5 | Autonomous judge demo | ✅ Done |
 | 6 | React UI + Binance-style UI V2 | ✅ Complete locally |
-| 7 | Real BAW wallet connection and on-chain proof | 🔲 Not complete |
+| 7 | Real BAW wallet connection and controlled BSC-USDT on-chain proof | ✅ Done |
 | 8 | One-service runtime and one-click installer | 🔲 Not started |
 | 9 | Signed release, upgrades, diagnostics, rollback | 🔲 Not started |
 
-The default payment mode remains `mock`. The Binance adapter must not be treated as production-ready until the official BAW CLI is installed, the user completes QR authorization, real vendor addresses replace the demo placeholders, and a controlled on-chain proof is verified.
+The default payment mode remains `mock`. A controlled BSC-USDT proof is verified, but Binance mode still requires an authenticated local BAW session and a verified vendor route. No wallet adapter may receive seed phrases or private keys from Treasury.
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the current delivery status and next steps.
 
@@ -121,6 +124,7 @@ TypeScript / Node.js 22 (ES2022 modules). See `docs/02-ARCHITECTURE.md` for ADR.
 4. **Receipt as audit trail**: Every receipt tells "why" not just "where"
 5. **SQLite persistence**: Ledger survives process restart via `TREASURY_DB_PATH`
 6. **Tier-based Fair Price**: Economy ($0.08–$0.15), Balanced ($0.18–$0.35), Performance ($0.28–$0.60)
+7. **Wallet/rail separation**: wallets sign and broadcast; rails define transfer protocols; Treasury owns policy, routing, idempotency, and audit
 
 ## Hackathon Frozen Demo Results
 

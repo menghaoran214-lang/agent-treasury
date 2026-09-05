@@ -32,6 +32,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Treasury Skill instructions for agent behavior.
 - Mock payment end-to-end demo.
 - Binance provider integration through the official `baw wallet send` command, including input validation, idempotency, and UNKNOWN-state handling.
+- Separate WalletAdapter and PaymentRail contracts; Binance Agentic Wallet currently uses the direct-token-transfer rail.
 - UI V2 routes: live workspace, pending approvals, ledger, receipts, vendors, analytics, and settings.
 - Immediate Simplified Chinese / English switching across all functional UI copy.
 - V2 counterparties, editable accounting metadata, audit history, and internal-transfer exclusion from spend totals.
@@ -64,9 +65,8 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Split WalletAdapter from PaymentRail and formalize extension interfaces.
-2. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
-3. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
+1. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
+2. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 
 ## Known Technical Debt
 

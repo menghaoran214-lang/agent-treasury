@@ -54,5 +54,5 @@ month/year/all-time reports now use persisted facts and valuation snapshots.
 P0 payment safety is complete, including operator reconciliation for UNKNOWN
 payments without automatic retry. Project, payment-chain, token, and anomaly
 dimensions and deterministic natural-language queries are also available in the
-real report. The next slice is richer classification history followed by the
-WalletAdapter/PaymentRail extension boundary.
+real report. WalletAdapter and PaymentRail are now separate extension contracts;
+the next slice is the unified background service boundary.

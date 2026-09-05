@@ -15,7 +15,8 @@ import { ApprovalType as AT } from '../domain/types.js';
 import { sqliteStorage } from '../storage/sqliteStorage.js';
 import { DEFAULT_POLICY } from '../config/defaultPolicy.js';
 import { BSC_USDT_ROUTE, resolvePaymentRoute, routeFingerprint } from '../config/paymentRoutes.js';
-import { runBawCommand } from './walletCommandRunner.js';
+import { binanceAgenticWalletAdapter, type WalletAdapter } from './walletAdapter.js';
+import { directTokenTransferRail, type PaymentRail } from './paymentRail.js';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ function paymentStateResult(
   paymentState: 'completed' | 'failed' | 'unknown',
   reference: string | undefined,
   message: string,
-  provider: 'mock' | 'binance',
+  provider: string,
   rawResponse?: unknown,
   idempotentReuse = false,
 ): PaymentProviderResult {
@@ -51,37 +52,6 @@ function paymentStateResult(
   };
 }
 
-// ─── BAW wallet send — uses execFile, no shell injection ──────────────────────
-
-async function callBawWalletSend(
-  amount: string,
-  recipient: string,
-  chainId: string,
-  tokenAddress: string,
-): Promise<{ success: boolean; txHash?: string; error?: string; raw?: unknown }> {
-  const cfg = getBinanceConfig();
-  const args = [
-    'wallet', 'send',
-    '--amount', amount,
-    '--recipient', recipient,
-    '--binanceChainId', chainId,
-    '--tokenAddress', tokenAddress,
-    '--json',
-  ];
-
-  const outcome = await runBawCommand(args);
-  if (outcome.kind === 'success') {
-    const data = outcome.data as { txHash?: string } | undefined;
-    if (data?.txHash) return { success: true, txHash: data.txHash, raw: outcome.raw };
-    return { success: false, error: 'Wallet reported success without a transaction hash', raw: undefined };
-  }
-  return {
-    success: false,
-    error: outcome.message,
-    raw: outcome.kind === 'rejected' ? { error: { message: outcome.message }, response: outcome.raw } : undefined,
-  };
-}
-
 // ─── Persistent idempotency ────────────────────────────────────────────────────
 
 function loadPaymentRecord(purchaseId: string) {
@@ -90,7 +60,11 @@ function loadPaymentRecord(purchaseId: string) {
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
-export const binancePaymentProvider: PaymentProvider = {
+export function createBinancePaymentProvider(
+  wallet: WalletAdapter = binanceAgenticWalletAdapter,
+  rail: PaymentRail = directTokenTransferRail,
+): PaymentProvider {
+  return {
   name: 'binance',
 
   async execute(
@@ -121,7 +95,7 @@ export const binancePaymentProvider: PaymentProvider = {
         return paymentStateResult(
           true, 'completed', prior.reference ?? undefined,
           `Purchase ${request.id} already paid — returning existing reference`,
-          prior.provider as 'mock' | 'binance',
+          prior.provider,
           undefined, true,
         );
       }
@@ -129,14 +103,14 @@ export const binancePaymentProvider: PaymentProvider = {
         return paymentStateResult(
           false, 'unknown', prior.reference ?? undefined,
           `Purchase ${request.id} payment is PROCESSING — await completion before retry`,
-          prior.provider as 'mock' | 'binance',
+          prior.provider,
         );
       }
       if (prior.payment_state === 'unknown') {
         return paymentStateResult(
           false, 'unknown', prior.reference ?? undefined,
           `Purchase ${request.id} payment state is UNKNOWN — manual inspection required before retry`,
-          prior.provider as 'mock' | 'binance',
+          prior.provider,
         );
       }
       // prior state === 'failed' — safe to allow controlled retry below
@@ -183,14 +157,14 @@ export const binancePaymentProvider: PaymentProvider = {
     });
 
     // ─── Execute ─────────────────────────────────────────────────────────
-    const result = await callBawWalletSend(amount, route.recipient, route.chain_id, route.token_address);
+    const result = await rail.pay({ amount, route }, wallet);
 
-    if (result.success && result.txHash) {
+    if (result.state === 'submitted') {
       sqliteStorage.savePaymentRecord({
         purchase_id: request.id,
         provider: 'binance',
         payment_state: 'completed',
-        reference: result.txHash,
+        reference: result.reference,
         amount: provider.price,
         currency: provider.currency,
         vendor_id: provider.provider_id,
@@ -200,15 +174,15 @@ export const binancePaymentProvider: PaymentProvider = {
         token_symbol: route.token_symbol,
         token_address: route.token_address,
         recipient: route.recipient,
-        raw_response: { route: { ...route, recipient: `${route.recipient.slice(0, 6)}...${route.recipient.slice(-4)}` }, response: result.raw },
+        raw_response: { wallet: wallet.id, rail: rail.id, route: { ...route, recipient: `${route.recipient.slice(0, 6)}...${route.recipient.slice(-4)}` }, response: result.raw },
       });
       sqliteStorage.saveTreasuryEvent({
         id: `${request.id}:payment_completed`, event_type: 'payment_completed', severity: 'success', purchase_id: request.id,
-        data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name, tx_hash: result.txHash },
+        data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name, tx_hash: result.reference },
       });
       return paymentStateResult(
-        true, 'completed', result.txHash,
-        `Binance payment: ${amount} ${route.token_symbol} on ${route.chain_name} → ${provider.provider_name} (tx: ${result.txHash})`,
+        true, 'completed', result.reference,
+        `Binance payment: ${amount} ${route.token_symbol} on ${route.chain_name} → ${provider.provider_name} (tx: ${result.reference})`,
         'binance', result.raw,
       );
     }
@@ -216,17 +190,16 @@ export const binancePaymentProvider: PaymentProvider = {
     // ─── Handle failure ──────────────────────────────────────────────────
     // If the error is a network/timeout exception (not a user-level rejection),
     // we cannot be sure the tx wasn't broadcast. Mark as UNKNOWN.
-    const isNetworkError = !result.raw || (result.raw as { error?: { message?: string } })?.error?.message == null;
-    const finalState = isNetworkError ? 'unknown' : 'failed';
-    const finalMessage = isNetworkError
-      ? `Binance payment result uncertain (network error): ${result.error}`
-      : `Binance payment failed: ${result.error}`;
+    const finalState = result.state === 'unknown' ? 'unknown' : 'failed';
+    const finalMessage = result.state === 'unknown'
+      ? `Binance payment result uncertain: ${result.message}`
+      : `Binance payment failed: ${result.message}`;
 
     sqliteStorage.savePaymentRecord({
       purchase_id: request.id,
       provider: 'binance',
       payment_state: finalState,
-      reference: result.txHash ?? undefined,
+      reference: undefined,
       amount: provider.price,
       currency: provider.currency,
       vendor_id: provider.provider_id,
@@ -241,9 +214,12 @@ export const binancePaymentProvider: PaymentProvider = {
     sqliteStorage.saveTreasuryEvent({
       id: `${request.id}:payment_${finalState}`, event_type: finalState === 'unknown' ? 'payment_unknown' : 'payment_failed',
       severity: finalState === 'unknown' ? 'warning' : 'error', purchase_id: request.id,
-      data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name, reason: result.error },
+      data: { amount: provider.price, currency: route.token_symbol, chain: route.chain_name, vendor: provider.provider_name, reason: result.message },
     });
 
-    return paymentStateResult(false, finalState, result.txHash, finalMessage, 'binance', result.raw);
+    return paymentStateResult(false, finalState, undefined, finalMessage, 'binance', result.raw);
   },
-};
+  };
+}
+
+export const binancePaymentProvider = createBinancePaymentProvider();

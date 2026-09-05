@@ -129,7 +129,7 @@ export interface UserPreferences {
 // Result returned by PaymentProvider.execute() — includes explicit payment state
 export interface PaymentProviderResult {
   success: boolean;
-  provider: 'mock' | 'binance';
+  provider: string;
   payment_state: PaymentState;
   reference?: string;       // txHash or mock reference
   message: string;

@@ -80,6 +80,7 @@ Last synchronized: 2026-09-05
 
 ### Gate 8 — One-Click Productization
 
+- [x] Separate WalletAdapter from PaymentRail with testable extension contracts
 - [ ] One background service for MCP, UI, SQLite, policy, and wallet health
 - [ ] Windows installer and clean uninstall
 - [ ] Detect supported AI hosts

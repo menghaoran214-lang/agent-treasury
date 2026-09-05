@@ -58,7 +58,7 @@
 └──────────────────┬──────────────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────────────┐
-│         Binance x402 (Gate 4) — real payment         │
+│ WalletAdapter → PaymentRail → verified settlement    │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -70,6 +70,7 @@
 4. **Receipt as audit trail**: Every receipt tells "why" not just "where"
 5. **SQLite persistence**: Ledger survives process restart via `TREASURY_DB_PATH` env var
 6. **Tier-based Fair Price**: Economy ($0.08–$0.15), Balanced ($0.18–$0.35), Performance ($0.28–$0.60)
+7. **Wallet/rail separation**: `WalletAdapter` signs and broadcasts; `PaymentRail` defines how value moves; Treasury retains route validation, policy, idempotency, and audit
 
 ## Purchase Lifecycle
 
@@ -110,7 +111,10 @@ COMPLETED | HUMAN_APPROVAL_REQUIRED | BLOCKED | FAILED
 | `runtime/fairPrice.ts` | Tier-based fair price validation |
 | `runtime/securityGate.ts` | Risk assessment (pluggable adapter) |
 | `runtime/policyEngine.ts` | Policy enforcement logic |
-| `adapters/paymentAdapter.ts` | Payment execution (mock → x402 at Gate 4) |
+| `adapters/paymentAdapter.ts` | Payment provider dispatch and mock provider |
+| `adapters/paymentRail.ts` | Payment protocol extension contract; direct token transfer is the first rail |
+| `adapters/walletAdapter.ts` | Wallet signing/broadcast contract; Binance Agentic Wallet is the first adapter |
+| `adapters/binancePaymentProvider.ts` | Safe composition of Treasury policy, direct-transfer rail, and Binance wallet |
 | `runtime/receipt.ts` | Receipt generation |
 | `runtime/ledger.ts` | SQLite-backed ledger |
 | `runtime/treasury.ts` | Orchestration / vertical slice |

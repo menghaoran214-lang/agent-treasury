@@ -80,7 +80,7 @@ export async function runTreasury(
 
   // 6. Payment if auto
   let paymentRef: string | undefined;
-  let paymentProv: 'mock' | 'binance' = 'mock';
+  let paymentProv = 'mock';
   let paymentState: string = 'unprocessed';
   if (approvalType === AT.AUTO) {
     const result = await executePayment(request, selectedOffer, approvalType);
