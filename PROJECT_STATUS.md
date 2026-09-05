@@ -37,6 +37,8 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - V2 counterparties, editable accounting metadata, audit history, and internal-transfer exclusion from spend totals.
 - Persistent vendor profiles with preview-first batch import, deduplication, post-import editing, partial-result reporting, and scoped undo.
 - Immutable transaction-time valuation snapshots and persistent USD/USDC/USDT/BTC quote preference with explicit missing-rate handling.
+- Searchable and filterable ledger with an immutable-fact/accounting detail drawer.
+- Month, year, and all-time reports derived from persisted entries, including real trends, categories, counterparties, and internal-transfer exclusion.
 
 ## What Is Not Yet Production-Ready
 
@@ -61,9 +63,9 @@ The UI also requires a browser smoke test covering both languages and the automa
 ## Next Delivery Order
 
 1. Complete UNKNOWN reconciliation and operator recovery without automatic retries.
-2. Add the V2 Counterparty model and separate immutable transaction facts from editable accounting metadata.
-3. Redesign ledger detail, classification history, internal transfers, and reporting.
-4. Add supplier import and split WalletAdapter from PaymentRail.
+2. Add project, chain, token, and anomaly report dimensions.
+3. Add natural-language accounting queries and refine classification history.
+4. Split WalletAdapter from PaymentRail and formalize extension interfaces.
 5. Combine MCP, UI, SQLite, policy, and wallet health into one background service.
 6. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
 

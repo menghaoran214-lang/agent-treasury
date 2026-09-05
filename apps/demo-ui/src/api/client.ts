@@ -121,6 +121,17 @@ export const preferenceApi = {
   update: (quote_currency: QuoteCurrency) => post<{ quote_currency: QuoteCurrency }>('/preferences', { quote_currency }),
 };
 
+export interface AccountingReport {
+  period: 'month' | 'year' | 'all'; quoteCurrency: string; total: number | null;
+  completedCount: number; decisionCount: number; internalTransferCount: number; missingValuationCount: number;
+  trend: Array<{ bucket: string; amount: number }>;
+  categories: Array<{ name: string; amount: number; count: number }>;
+  counterparties: Array<{ name: string; amount: number; count: number }>;
+}
+export const reportApi = {
+  get: (period: AccountingReport['period'], quote?: string) => get<AccountingReport>(`/reports?period=${period}${quote ? `&quote=${encodeURIComponent(quote)}` : ''}`),
+};
+
 export const counterpartyApi = {
   upsert: (counterparty: Omit<Counterparty, 'created_at' | 'updated_at'>) => post<Counterparty>('/counterparties', counterparty),
 };

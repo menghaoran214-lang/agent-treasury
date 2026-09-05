@@ -10,6 +10,10 @@ export default function LedgerPage({ onViewReceipt }: Props) {
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [quoteCurrency, setQuoteCurrency] = useState<QuoteCurrency>('USD');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
     preferenceApi.get().then(async prefs => {
@@ -25,6 +29,14 @@ export default function LedgerPage({ onViewReceipt }: Props) {
 
   const entries = data?.entries ?? [];
   const stats = data?.stats;
+  const categories = Array.from(new Set(entries.map((entry: any) => entry.accounting?.category ?? entry.receipt?.resource_type).filter(Boolean)));
+  const filteredEntries = entries.filter((entry: any) => {
+    const item = entry.receipt ?? entry; const name = entry.counterparty?.display_name ?? item.vendor?.name ?? item.vendor_name ?? '';
+    const category = entry.accounting?.category ?? item.resource_type ?? '';
+    return (statusFilter === 'all' || String(item.status).toLowerCase() === statusFilter)
+      && (categoryFilter === 'all' || category === categoryFilter)
+      && (!search.trim() || `${name} ${item.purpose ?? ''} ${item.transaction_reference ?? ''}`.toLowerCase().includes(search.trim().toLowerCase()));
+  });
 
   async function saveAccounting() {
     if (!editing) return;
@@ -76,8 +88,14 @@ export default function LedgerPage({ onViewReceipt }: Props) {
 
       {/* Table */}
       <div className="card">
+        <div className="ledger-toolbar">
+          <input className="form-input" aria-label={t('ledger.filters.search')} placeholder={t('ledger.filters.search')} value={search} onChange={e => setSearch(e.target.value)} />
+          <select className="form-select" aria-label={t('ledger.filters.status')} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}><option value="all">{t('ledger.filters.allStatus')}</option><option value="completed">{t('ledger.status.COMPLETED')}</option><option value="blocked">{t('ledger.status.BLOCKED')}</option><option value="rejected">{t('ledger.status.REJECTED')}</option></select>
+          <select className="form-select" aria-label={t('ledger.filters.category')} value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}><option value="all">{t('ledger.filters.allCategories')}</option>{categories.map(category => <option key={category}>{category}</option>)}</select>
+          <span>{t('ledger.filters.results').replace('{n}', String(filteredEntries.length))}</span>
+        </div>
         <div className="table-wrap">
-          {entries.length === 0 ? (
+          {filteredEntries.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📋</div>
               <div className="empty-state-text">{t('ledger.empty')}</div>
@@ -96,7 +114,7 @@ export default function LedgerPage({ onViewReceipt }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry: any) => {
+                {filteredEntries.map((entry: any) => {
                   const item = entry.receipt ?? entry;
                   const receiptId = String(item.id ?? item.receipt_id ?? '—');
                   const vendorName = item.vendor?.name ?? item.vendor_name ?? '—';
@@ -104,7 +122,7 @@ export default function LedgerPage({ onViewReceipt }: Props) {
                   const displayName = entry.counterparty?.display_name ?? vendorName;
                   const status = String(item.status ?? 'unknown').toUpperCase();
                   return (
-                  <tr key={receiptId} style={{ cursor: 'pointer' }} onClick={() => onViewReceipt(receiptId)}>
+                  <tr key={receiptId} style={{ cursor: 'pointer' }} onClick={() => setSelected({ entry, item, receiptId, displayName })}>
                     <td className="mono" style={{ fontSize: 12 }}>{receiptId.slice(0, 10)}…</td>
                     <td>
                       <div>{displayName}</div>
@@ -162,6 +180,14 @@ export default function LedgerPage({ onViewReceipt }: Props) {
           <div className="modal-footer"><button className="btn btn-ghost" onClick={() => setEditing(null)}>{t('common.cancel')}</button><button className="btn btn-primary" disabled={saving} onClick={saveAccounting}>{saving ? t('common.saving') : t('common.save')}</button></div>
         </div>
       </div>}
+      {selected && <div className="detail-drawer-overlay" onClick={() => setSelected(null)}><aside className="detail-drawer" onClick={event => event.stopPropagation()}>
+        <div className="modal-header"><div><div className="modal-title">{t('ledger.details.title')}</div><div className="mono text-muted" style={{fontSize:11,marginTop:4}}>{selected.receiptId}</div></div><button className="modal-close" onClick={() => setSelected(null)}>×</button></div>
+        <section><h3>{t('ledger.details.facts')}</h3><Detail label={t('ledger.details.counterparty')} value={selected.displayName} /><Detail label={t('ledger.columns.amount')} value={`${Number(selected.item.amount).toFixed(2)} ${selected.item.currency}`} /><Detail label={t('ledger.details.purpose')} value={selected.item.purpose ?? selected.entry.request_snapshot?.purpose ?? '—'} /><Detail label={t('ledger.columns.status')} value={t(`ledger.status.${String(selected.item.status).toUpperCase()}`)} /><Detail label={t('ledger.details.reference')} value={selected.item.transaction_reference ?? '—'} mono /><Detail label={t('ledger.columns.time')} value={new Date(selected.item.created_at).toLocaleString(i18n.lang === 'zh-CN' ? 'zh-CN' : 'en-US')} /></section>
+        <section><h3>{t('ledger.details.accounting')}</h3><Detail label={t('ledger.accounting.category')} value={selected.entry.accounting?.category ?? '—'} /><Detail label={t('ledger.accounting.note')} value={selected.entry.accounting?.note ?? '—'} /><Detail label={t('ledger.details.spendTreatment')} value={selected.entry.accounting?.include_in_spend === false ? t('ledger.details.excluded') : t('ledger.details.included')} /></section>
+        <div className="drawer-actions"><button className="btn btn-primary" onClick={() => onViewReceipt(selected.receiptId)}>{t('ledger.details.receipt')}</button></div>
+      </aside></div>}
     </div>
   );
 }
+
+function Detail({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) { return <div className="detail-row"><span>{label}</span><b className={mono ? 'mono' : ''}>{value}</b></div>; }

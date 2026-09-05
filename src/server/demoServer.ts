@@ -16,6 +16,7 @@ import type { PurchaseRequest } from '../domain/types.js';
 import { PurchaseStrategy, CounterpartyType } from '../domain/types.js';
 import type { Policy } from '../domain/types.js';
 import { previewVendorImport, commitVendorImport, type VendorImportCandidate } from '../runtime/vendorImport.js';
+import { buildAccountingReport, type ReportPeriod } from '../runtime/reporting.js';
 
 const app = express();
 app.use(express.json());
@@ -239,6 +240,13 @@ app.post('/api/preferences', (req, res) => {
   const quote = String((req.body as { quote_currency?: string }).quote_currency ?? '').toUpperCase();
   if (!['USD', 'USDC', 'USDT', 'BTC'].includes(quote)) { res.status(400).json({ error: 'unsupported quote currency' }); return; }
   res.json(sqliteStorage.savePreferences({ quote_currency: quote as 'USD' | 'USDC' | 'USDT' | 'BTC' }));
+});
+
+app.get('/api/reports', (_req, res) => {
+  const requestedPeriod = String(_req.query.period ?? 'month');
+  const period = (['month', 'year', 'all'].includes(requestedPeriod) ? requestedPeriod : 'month') as ReportPeriod;
+  const quote = String(_req.query.quote ?? sqliteStorage.getPreferences().quote_currency).toUpperCase();
+  res.json(buildAccountingReport(sqliteStorage.getAllEntries(), period, quote, id => sqliteStorage.getValuationSnapshot(id, 'USD')));
 });
 
 const counterpartyTypes = new Set(Object.values(CounterpartyType));

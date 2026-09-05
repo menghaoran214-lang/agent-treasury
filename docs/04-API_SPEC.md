@@ -35,6 +35,17 @@
   stablecoin USD snapshots. BTC without a configured rate returns `total: null`
   instead of a fabricated conversion.
 
+## Accounting reports
+
+- `GET /api/reports?period=month|year|all&quote=USD` builds a report from the
+  persisted ledger and immutable valuation snapshots.
+- Reports include period-aware trend buckets, spend and decision counts,
+  category totals, and top counterparties.
+- Internal transfers remain visible in the report count but are excluded from
+  consumption totals. Blocked purchases are decisions, not spend.
+- Missing conversion rates remain explicit and are never replaced by a guessed
+  value.
+
 ## Transport
 
 JSON-RPC 2.0 over stdio via `@modelcontextprotocol/sdk` StdioServerTransport.
