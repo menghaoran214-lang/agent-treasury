@@ -1,0 +1,79 @@
+1
+00:00:00,000 --> 00:00:07,500
+钱包只知道怎么付款，却不知道这笔钱该不该付。
+A wallet knows how to pay, but not whether it should.
+
+2
+00:00:07,500 --> 00:00:18,500
+当 AI 开始自己花钱，它需要财务、采购和会计。这就是 Agent Treasury。
+When AI starts spending, it needs finance, procurement, and accounting. This is Agent Treasury.
+
+3
+00:00:18,500 --> 00:00:30,000
+它不是新钱包，也不只服务于 x402，而是安装在 AI 里的 Treasury Skill。
+It is not another wallet or an x402-only tool. It is a Treasury Skill installed into AI.
+
+4
+00:00:30,000 --> 00:00:43,000
+用户设置采购偏好、自动支付上限、单笔上限，以及每天和每月的预算。
+Set procurement preferences, approval limits, and daily and monthly budgets.
+
+5
+00:00:43,000 --> 00:00:50,500
+钱包继续保管资产和签名，Agent Treasury 不接触私钥。
+The wallet keeps custody and signing. Agent Treasury never handles private keys.
+
+6
+00:00:50,500 --> 00:01:00,500
+用户仍然可以自然地对 AI 说：帮我获取一份最新的市场数据。
+The user simply asks the AI: Get me the latest market data.
+
+7
+00:01:00,500 --> 00:01:15,500
+Treasury 比较供应商、检查价格、验证风险和支付地址，再按照用户策略作出决定。
+Treasury compares vendors, checks price and risk, then applies the user's policy.
+
+8
+00:01:15,500 --> 00:01:28,000
+低风险且在自动支付上限内的采购会自动完成，只在右下角显示简洁结果。
+Low-risk purchases within the auto-pay limit complete automatically with a concise result notification.
+
+9
+00:01:28,000 --> 00:01:42,500
+超过自动支付权限时，中央审批卡会显示供应商、金额、用途和风险。
+Above the auto-pay limit, a central approval card shows the purchase details.
+
+10
+00:01:42,500 --> 00:01:53,500
+价格、地址、预算或安全规则严重异常时，交易会被直接拦截。
+Severe price, destination, budget, or safety violations are blocked immediately.
+
+11
+00:01:53,500 --> 00:02:10,500
+支付后，交易对象、用途、金额、链、代币、审批过程、证明和收据都会写入智能账本。
+Every payment, approval, proof, and receipt is written to the smart ledger.
+
+12
+00:02:10,500 --> 00:02:22,000
+名称、别名、分类、项目和备注可以编辑，但原始交易事实不会被篡改。
+Accounting labels are editable. Original transaction facts remain immutable.
+
+13
+00:02:22,000 --> 00:02:34,500
+用户可以自然语言询问月度支出、主要类别，或者向某个供应商支付过几次。
+Ask naturally about monthly spend, major categories, or any vendor.
+
+14
+00:02:34,500 --> 00:02:44,500
+供应商支持导入预览、名称编辑、重复检查、部分导入和撤销。
+Vendor import supports preview, renaming, duplicate checks, partial import, and undo.
+
+15
+00:02:44,500 --> 00:02:55,000
+项目已完成 Binance Agentic Wallet 的 BSC-USDT 真实支付验证。
+The project has completed a real BSC-USDT payment proof through Binance Agentic Wallet.
+
+16
+00:02:55,000 --> 00:03:05,000
+钱包负责付款；Agent Treasury 让 AI 的每一笔支出可控制、可解释、可追踪。
+Wallets execute payments. Agent Treasury makes every AI expense controllable, explainable, and traceable.

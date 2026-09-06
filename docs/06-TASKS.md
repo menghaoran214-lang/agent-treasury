@@ -94,7 +94,7 @@ Last synchronized: 2026-09-06
 ### Gate 9 — Release
 
 - [x] Regenerate and visually verify ten distinct final Gate 6B screenshots
-- [ ] Demo video and submission package
+- [x] Demo video and submission package
 - [ ] Signed release artifact
 - [ ] Versioned database migrations
 - [ ] Automatic updates and rollback
