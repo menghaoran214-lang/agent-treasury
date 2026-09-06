@@ -9,12 +9,13 @@ import SettingsPage from './pages/SettingsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import ReceiptsPage from './pages/ReceiptsPage';
 import ReportsPage from './pages/ReportsPage';
+import ChatPage from './pages/ChatPage';
 import ToastContainer from './components/ToastContainer';
 import ApprovalModal from './components/ApprovalModal';
 import ExceptionModal from './components/ExceptionModal';
 import { eventApi, ledgerApi, policyApi, type TreasuryEvent } from './api/client';
 
-export type Page = 'setup' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
+export type Page = 'setup' | 'chat' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
 
 interface AppState {
   page: Page;
@@ -63,7 +64,7 @@ export default function App() {
   };
   const pageFromHash = (): Page => {
     const candidate = window.location.hash.replace(/^#\/?/, '').split('/')[0];
-    return (['setup', 'decision', 'approvals', 'ledger', 'receipts', 'receipt', 'vendors', 'reports', 'settings'] as Page[]).includes(candidate as Page)
+    return (['setup', 'chat', 'decision', 'approvals', 'ledger', 'receipts', 'receipt', 'vendors', 'reports', 'settings'] as Page[]).includes(candidate as Page)
       ? candidate as Page
       : 'setup';
   };
@@ -168,6 +169,7 @@ export default function App() {
   };
 
   const navItems: { id: Page; labelKey: string; icon: string }[] = [
+    { id: 'chat', labelKey: 'v2.nav.chat', icon: '✦' },
     { id: 'decision', labelKey: 'v2.nav.decision', icon: '⚡' },
     { id: 'approvals', labelKey: 'v2.nav.approvals', icon: '✓' },
     { id: 'ledger', labelKey: 'v2.nav.ledger', icon: '▤' },
@@ -214,6 +216,14 @@ export default function App() {
         </aside>
 
         <main className="app-main">
+        {state.page === 'chat' && (
+          <ChatPage
+            notificationMode={state.notificationMode}
+            onShowToast={showToast}
+            onApprovalRequired={(req) => setState(s => ({ ...s, approvalRequest: req }))}
+            onException={(exc) => setState(s => ({ ...s, exception: exc }))}
+          />
+        )}
         {state.page === 'decision' && (
           <DecisionPage
             notificationMode={state.notificationMode}

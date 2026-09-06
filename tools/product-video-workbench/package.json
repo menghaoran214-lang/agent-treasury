@@ -1,0 +1,19 @@
+{
+  "name": "agent-treasury-video-workbench",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node scripts/record-host-demo.js",
+    "studio": "remotion studio src/index.tsx",
+    "render": "remotion render src/index.tsx AgentTreasuryV2 outputs/agent-treasury-v2.mp4",
+    "still": "remotion still src/index.tsx AgentTreasuryV2 outputs/agent-treasury-v2-cover.png --frame=30"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.372",
+    "@remotion/google-fonts": "^4.0.372",
+    "@remotion/media": "^4.0.372",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "remotion": "^4.0.372"
+  }
+}

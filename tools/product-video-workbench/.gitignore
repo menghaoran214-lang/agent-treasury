@@ -1,0 +1,5 @@
+node_modules/
+outputs/
+public/*.mp3
+public/*.wav
+public/*.webm
