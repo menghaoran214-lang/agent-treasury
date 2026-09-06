@@ -1,6 +1,6 @@
 # Project Status
 
-Last verified: 2026-09-05
+Last verified: 2026-09-06
 
 ## Current Stage
 
@@ -21,7 +21,7 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 | 6A | Initial React demo UI and screenshot suite | Done |
 | 6B | Binance-style UI V2, operational pages, popups, responsive layout, full zh/en switching | Complete locally |
 | 7 | Real BAW wallet connection and controlled on-chain proof | Complete; Windows→WSL safety bridge verified read-only |
-| 8 | One-service runtime and one-click installer | In progress; unified local service boundary verified |
+| 8 | One-service runtime and one-click installer | Windows RC lifecycle verified; clean-machine and signing remain |
 | 9 | Signed release, upgrades, diagnostics, rollback | Not started |
 
 ## What Is Real Today
@@ -54,8 +54,8 @@ Agent Treasury is a working hackathon prototype with a Treasury runtime, MCP int
 - Failure/timeout simulation and an audited UNKNOWN reconciliation workflow are covered; reconciliation never automatically retries a payment.
 - A durable multi-vendor/counterparty registry is not yet implemented.
 - A unified local service can now serve the production UI, API, MCP endpoint, database access, and wallet health; OS packaging and lifecycle management remain unfinished.
-- No one-click AI host detection, MCP registration, Skill installation, start-on-boot, repair, update, or uninstall flow exists.
-- No signed installer or clean-machine acceptance test exists.
+- Windows RC installer installs the Skill, registers Codex MCP, starts the hidden service, diagnoses health, and uninstalls while preserving data.
+- Other AI-host registration, start-on-boot, repair, signed updates, rollback, and clean-machine acceptance remain unfinished.
 
 ## Verification Commands
 
@@ -69,8 +69,8 @@ The UI also requires a browser smoke test covering both languages and the automa
 
 ## Next Delivery Order
 
-1. Add OS lifecycle management and AI-host registration around the unified service.
-2. Build the one-click installer, then signed upgrades, diagnostics, rollback, and uninstall.
+1. Produce the competition submission package and demo video from the verified RC.
+2. Run clean-machine acceptance, then add signing, upgrades, rollback, repair, and other AI-host adapters.
 
 ## Known Technical Debt
 

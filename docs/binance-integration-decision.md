@@ -6,8 +6,11 @@
 
 The repository normally runs on Windows while the authenticated BAW installation
 lives in Ubuntu WSL. `walletCommandRunner.ts` therefore invokes `wsl.exe` with an
-argument array and `/usr/bin/env`; it never builds a shell string. On WSL/Linux
-the same runner invokes BAW directly.
+argument array. A fixed, read-only `command -v baw` preflight resolves the CLI from
+the user's WSL login environment, then the discovered absolute executable receives
+amount, recipient, chain, and token as separate arguments. No payment value enters
+a shell command. An explicitly configured absolute BAW path skips discovery. On
+WSL/Linux the runner invokes BAW directly.
 
 ### Why This Path
 

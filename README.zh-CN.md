@@ -65,7 +65,20 @@ Agent Treasury 的目标不是增加每次操作的步骤，而是在首次设�
 
 ![Agent Treasury 架构](docs/assets/architecture.svg)
 
-## 本地体验
+## Windows 一键体验
+
+前置条件：Node.js 22 或更高版本。双击 [`install.cmd`](install.cmd)，安装器会检查依赖、构建 UI、安装 Agent Treasury Skill；如果检测到 Codex CLI，还会自动注册本地 MCP，并以安全的 `mock` 支付模式启动隐藏后台服务。
+
+安装后：
+
+- 打开 `http://127.0.0.1:3333`。
+- 双击 [`start-agent-treasury.cmd`](start-agent-treasury.cmd) 可重新启动并打开产品。
+- 运行 `powershell -File scripts/diagnose.ps1` 可查看健康报告。
+- 双击 [`uninstall.cmd`](uninstall.cmd) 可移除集成，默认保留账务数据。
+
+这是 Windows 参赛候选版安装器，还不是经过签名和干净电脑认证的正式安装包。Codex 自动注册已验证，其他 AI 宿主的自动注册仍在路线图中。
+
+## 手动本地体验
 
 需要 Node.js 22 与 npm：
 
@@ -90,13 +103,13 @@ npm run service
 | OKX 等其他钱包 | 只有扩展接口，真实适配器未完成 |
 | x402、订阅等支付方式 | PaymentRail 已预留，尚未实现 |
 | 系统级桌面弹窗 | 尚未实现 |
-| 一键安装 | 尚未实现 |
+| Windows 一键体验 | 已在开发机验证 RC；尚未签名或完成干净电脑认证 |
 
 ## AI 接入
 
 Agent Skill 的唯一正式说明位于 [`skills/agent-treasury/SKILL.md`](skills/agent-treasury/SKILL.md)。统一服务同时提供 UI、REST API、`/mcp`、本地数据库和只读钱包健康状态。
 
-自动识别 AI 宿主、注册 MCP、安装 Skill、开机启动、修复、升级和卸载仍属于 Gate 8。完成安装器以前，这仍是开发者安装流程，不能称为“一键安装”。
+Windows RC 安装器已经完成 Skill 安装、Codex MCP 注册、统一服务启动、诊断和保留数据的卸载。其他 AI 宿主自动识别、开机启动、修复、签名升级、回滚和干净电脑认证仍属于 Gate 8。
 
 ## 支付安全边界
 
@@ -110,7 +123,7 @@ Agent Skill 的唯一正式说明位于 [`skills/agent-treasury/SKILL.md`](skill
 
 ## 当前阶段
 
-Treasury 核心、会计 UI、MCP/Skill、统一服务和首次受控真实支付证明已经完成。一键安装、干净电脑验收、签名发布、升级、诊断、回滚和卸载尚未完成。
+Treasury 核心、会计 UI、MCP/Skill、统一服务、首次受控真实支付证明，以及 Windows RC 安装—诊断—卸载闭环已经完成。干净电脑验收、签名发布、自动升级、回滚和其他 AI 宿主适配尚未完成。
 
 详细进度见 [`PROJECT_STATUS.md`](PROJECT_STATUS.md) 和 [`docs/07-PRODUCT-V2-ROADMAP.md`](docs/07-PRODUCT-V2-ROADMAP.md)。
 

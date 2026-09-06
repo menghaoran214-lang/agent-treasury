@@ -6,6 +6,7 @@ coverage/
 .env.local
 .DS_Store
 .codex-checkpoints/
+.runtime/
 
 # SQLite databases
 *.db

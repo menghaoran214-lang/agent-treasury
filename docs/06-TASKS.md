@@ -1,6 +1,6 @@
 # Tasks — Agent Treasury
 
-Last synchronized: 2026-09-05
+Last synchronized: 2026-09-06
 
 ## Completed
 
@@ -84,11 +84,11 @@ Last synchronized: 2026-09-05
 - [x] Replace the single-route assumption with multi-chain/multi-token vendor route declarations and verified-route selection
 - [x] One local process serving MCP, UI, API, SQLite-backed policy/data, and wallet health
 - [ ] OS background-service lifecycle and automatic restart
-- [ ] Windows installer and clean uninstall
+- [x] Windows RC installer and data-preserving uninstall verified on development machine
 - [ ] Detect supported AI hosts
-- [ ] Automatically register MCP and install the Treasury Skill
-- [ ] First-run policy and wallet onboarding
-- [ ] Start-on-boot, repair, diagnostics, and backup
+- [x] Automatically register Codex MCP and install the Treasury Skill
+- [x] Open existing first-run policy onboarding after installation
+- [ ] Start-on-boot, repair, and automatic backup; health diagnostics are implemented
 - [ ] Clean-machine installation acceptance test
 
 ### Gate 9 — Release
@@ -98,4 +98,4 @@ Last synchronized: 2026-09-05
 - [ ] Signed release artifact
 - [ ] Versioned database migrations
 - [ ] Automatic updates and rollback
-- [ ] Security and privacy documentation
+- [x] Security and privacy documentation

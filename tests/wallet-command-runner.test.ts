@@ -8,7 +8,7 @@ describe('wallet command runner', () => {
     process.env = { ...originalEnv };
   });
 
-  test('uses WSL without shell interpolation when configured', () => {
+  test('uses an explicit WSL path without shell interpolation when configured', () => {
     process.env.BAW_EXECUTION_HOST = 'wsl';
     process.env.BAW_WSL_DISTRO = 'Ubuntu';
     process.env.BAW_CLI_PATH = '/home/test/.local/bin/baw';
@@ -17,7 +17,23 @@ describe('wallet command runner', () => {
     expect(spec.executable).toBe('wsl.exe');
     expect(spec.args).toContain('/home/test/.local/bin/baw');
     expect(spec.args.slice(-4)).toEqual(['--amount', '0.10', '--recipient', '0xabc']);
-    expect(spec.args).not.toContain('bash');
+    expect(spec.args).not.toContain('-lc');
+  });
+
+  test('accepts a discovered WSL path without interpolating payment values', () => {
+    process.env.BAW_EXECUTION_HOST = 'wsl';
+    process.env.BAW_WSL_DISTRO = 'Ubuntu';
+    delete process.env.BAW_CLI_PATH;
+    const spec = resolveBawCommand(
+      ['wallet', 'send', '--amount', '0.10', '--recipient', '0xabc'],
+      '/home/test/.local/bin/baw',
+      '/home/test/.local/bin:/home/test/.nvm/bin:/usr/bin',
+    );
+
+    expect(spec.executable).toBe('wsl.exe');
+    expect(spec.args).toContain('/home/test/.local/bin/baw');
+    expect(spec.args).toContain('PATH=/home/test/.local/bin:/home/test/.nvm/bin:/usr/bin');
+    expect(spec.args.slice(-4)).toEqual(['--amount', '0.10', '--recipient', '0xabc']);
     expect(spec.args).not.toContain('-c');
   });
 

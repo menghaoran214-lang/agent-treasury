@@ -56,7 +56,13 @@ Agent Treasury 不是錢包，也不只服務於 x402。它位於 AI Agent 與�
 
 ![Agent Treasury 架構](docs/assets/architecture.svg)
 
-## 本機體驗
+## Windows 一鍵體驗
+
+前置條件：Node.js 22 或更高版本。雙擊 [`install.cmd`](install.cmd)，安裝器會檢查依賴、建置 UI、安裝 Agent Treasury Skill；偵測到 Codex CLI 時，也會自動註冊本機 MCP，並以安全的 `mock` 支付模式啟動隱藏背景服務。
+
+安裝後可開啟 `http://127.0.0.1:3333`，使用 [`start-agent-treasury.cmd`](start-agent-treasury.cmd) 重新啟動，執行 `powershell -File scripts/diagnose.ps1` 查看健康狀態，或雙擊 [`uninstall.cmd`](uninstall.cmd) 移除整合並保留帳務資料。這是 Windows 參賽候選版，尚未簽名或完成乾淨電腦認證；其他 AI 宿主的自動註冊仍在路線圖中。
+
+## 手動本機體驗
 
 需要 Node.js 22 與 npm：
 
@@ -78,7 +84,7 @@ npm run service
 
 Treasury 不接收助記詞或私鑰；簽名留在錢包中。只有策略允許且已驗證的路線可以執行，UNKNOWN 支付會凍結並等待人工核查，絕不自動重試。
 
-自動識別 AI 宿主、安裝 Skill、註冊 MCP、開機啟動、修復、升級與解除安裝尚未完成，因此目前不能稱為「一鍵安裝」。
+Windows RC 已完成 Skill 安裝、Codex MCP 註冊、統一服務啟動、診斷與保留資料的解除安裝。其他 AI 宿主自動識別、開機啟動、修復、簽名升級、回滾與乾淨電腦認證仍未完成。
 
 詳細進度見 [`PROJECT_STATUS.md`](PROJECT_STATUS.md) 與 [`docs/07-PRODUCT-V2-ROADMAP.md`](docs/07-PRODUCT-V2-ROADMAP.md)。
 

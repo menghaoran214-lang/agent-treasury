@@ -65,7 +65,20 @@ The repository contains ten reproducible screenshots covering setup, automatic c
 
 ![Agent Treasury architecture](docs/assets/architecture.svg)
 
-## Quick local evaluation
+## One-click Windows evaluation
+
+Prerequisite: Node.js 22 or newer. Double-click [`install.cmd`](install.cmd). The installer verifies dependencies, builds the UI, installs the Agent Treasury Skill, registers the local MCP endpoint when the Codex CLI is available, starts the hidden background service, and keeps payment in safe `mock` mode.
+
+After installation:
+
+- Open `http://127.0.0.1:3333`.
+- Double-click [`start-agent-treasury.cmd`](start-agent-treasury.cmd) to restart and open the product.
+- Run `powershell -File scripts/diagnose.ps1` for a health report.
+- Double-click [`uninstall.cmd`](uninstall.cmd) to remove the integration while preserving accounting data.
+
+This is a Windows release-candidate installer, not yet a signed production installer. Codex registration is verified; automatic registration for other AI hosts remains roadmap work.
+
+## Manual local evaluation
 
 Prerequisites: Node.js 22 and npm.
 
@@ -90,13 +103,13 @@ Open `http://127.0.0.1:3333`. The default payment mode is `mock`; evaluating the
 | Other wallets such as OKX | Extension contract only; no real adapter yet |
 | x402 and subscription rails | PaymentRail extension point only; not implemented |
 | OS-level notifications | Not implemented |
-| One-click installer | Not implemented |
+| Windows one-click evaluation | RC verified on the development machine; not signed or clean-machine certified |
 
 ## Agent integration
 
 The canonical Agent Skill is in [`skills/agent-treasury/SKILL.md`](skills/agent-treasury/SKILL.md). The unified service exposes the UI and REST API, Streamable HTTP MCP at `/mcp`, runtime and read-only wallet health at `/api/runtime/status`, and local persistence at `TREASURY_DB_PATH`.
 
-Automated host detection, MCP registration, Skill installation, start-on-boot, repair, update, and uninstall are Gate 8 work. Until that installer is complete, setup remains a developer workflow rather than a one-click consumer installation.
+The Windows RC installer now installs the Skill, registers Codex MCP when available, starts the unified service, provides diagnostics, and performs a data-preserving uninstall. Detection and registration for other AI hosts, start-on-boot, repair, signed updates, rollback, and clean-machine certification remain Gate 8 work.
 
 ## Payment safety
 
@@ -120,7 +133,7 @@ Real Binance settlement additionally requires a locally authenticated official `
 
 ## Project status
 
-The governed Treasury runtime, accounting UI, MCP/Skill integration, unified local service, and first controlled real-payment proof are complete. One-click packaging, clean-machine acceptance, signed releases, upgrades, diagnostics, rollback, and uninstall are not complete.
+The governed Treasury runtime, accounting UI, MCP/Skill integration, unified local service, first controlled real-payment proof, and Windows RC installer lifecycle are complete. Clean-machine acceptance, signed releases, automatic upgrades, rollback, and additional AI-host adapters are not complete.
 
 See [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`docs/07-PRODUCT-V2-ROADMAP.md`](docs/07-PRODUCT-V2-ROADMAP.md), and [`docs/02-ARCHITECTURE.md`](docs/02-ARCHITECTURE.md).
 
