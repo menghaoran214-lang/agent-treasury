@@ -160,11 +160,11 @@ export default function SettingsPage({ onNotificationModeChange }: Props) {
           <div className="settings-contact-title" id="settings-contact-title">{t('settings.contact.title')}</div>
           <p>{t('settings.contact.description')}</p>
         </div>
-        <a href="https://x.com/menghaoran214" target="_blank" rel="noreferrer" aria-label={`${t('settings.contact.open')} @menghaoran214`}>
-          <span className="x-mark" aria-hidden="true">𝕏</span>
-          <span><b>小Meng知识库</b><small>@menghaoran214</small></span>
-          <span className="contact-arrow" aria-hidden="true">↗</span>
-        </a>
+        <div className="settings-contact-links">
+          <a href="https://x.com/menghaoran214" target="_blank" rel="noreferrer" aria-label="X @menghaoran214"><span className="x-mark" aria-hidden="true">𝕏</span><span><b>小Meng知识库</b><small>@menghaoran214</small></span><span className="contact-arrow" aria-hidden="true">↗</span></a>
+          <a href="https://www.youtube.com/@%E5%B0%8FMeng-s7k" target="_blank" rel="noreferrer" aria-label="YouTube 小Meng"><span className="contact-network youtube" aria-hidden="true">▶</span><span><b>YouTube</b><small>@小Meng-s7k</small></span><span className="contact-arrow" aria-hidden="true">↗</span></a>
+          <a href="https://t.me/swithunm" target="_blank" rel="noreferrer" aria-label="Telegram @swithunm"><span className="contact-network telegram" aria-hidden="true">➤</span><span><b>Telegram</b><small>@swithunm</small></span><span className="contact-arrow" aria-hidden="true">↗</span></a>
+        </div>
       </section>
 
       {resolving && <div className="modal-overlay" onClick={() => setResolving(null)}><div className="modal" onClick={event => event.stopPropagation()}>

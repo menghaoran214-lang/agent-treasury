@@ -141,7 +141,11 @@ Treasury 核心、会计 UI、MCP/Skill、统一服务、首次受控真实支�
 
 ## 联系方式
 
-问题与建议：[X @menghaoran214](https://x.com/menghaoran214)。
+问题、建议与产品更新：
+
+- [X：@menghaoran214](https://x.com/menghaoran214)
+- [YouTube：@小Meng-s7k](https://www.youtube.com/@%E5%B0%8FMeng-s7k)
+- [Telegram：@swithunm](https://t.me/swithunm)
 
 ## 许可
 

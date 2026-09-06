@@ -94,7 +94,11 @@ Windows RC 已完成 Skill 安裝、Codex MCP 註冊、統一服務啟動、診�
 
 ## 聯絡方式
 
-問題與建議：[X @menghaoran214](https://x.com/menghaoran214)。
+問題、建議與產品更新：
+
+- [X：@menghaoran214](https://x.com/menghaoran214)
+- [YouTube：@小Meng-s7k](https://www.youtube.com/@%E5%B0%8FMeng-s7k)
+- [Telegram：@swithunm](https://t.me/swithunm)
 
 ## 授權
 

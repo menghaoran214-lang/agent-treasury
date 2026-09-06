@@ -151,7 +151,11 @@ The project is still preparing for public release. Reproducible bug reports, doc
 
 ## Contact
 
-Questions and feedback: [@menghaoran214 on X](https://x.com/menghaoran214).
+Questions, feedback, and product updates:
+
+- [X — @menghaoran214](https://x.com/menghaoran214)
+- [YouTube — @小Meng-s7k](https://www.youtube.com/@%E5%B0%8FMeng-s7k)
+- [Telegram — @swithunm](https://t.me/swithunm)
 
 ## License
 

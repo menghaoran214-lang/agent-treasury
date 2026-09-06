@@ -58,4 +58,6 @@ The evaluation installer always starts in `mock` payment mode. It cannot trigger
 ## Links
 
 - Repository: https://github.com/menghaoran214-lang/agent-treasury
-- Contact: https://x.com/menghaoran214
+- X: https://x.com/menghaoran214
+- YouTube: https://www.youtube.com/@%E5%B0%8FMeng-s7k
+- Telegram: https://t.me/swithunm

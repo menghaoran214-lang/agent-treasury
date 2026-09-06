@@ -2,7 +2,7 @@
 
 ## Final deliverable
 
-- Video: `Agent-Treasury-Demo-Bilingual-v0.1.0-rc.4.mp4`
+- Final video: `Agent-Treasury-Demo-v0.1.0-rc.5.mp4`
 - Duration: 185.5 seconds
 - Canvas: 1920×1080, 30 fps
 - Video: H.264
