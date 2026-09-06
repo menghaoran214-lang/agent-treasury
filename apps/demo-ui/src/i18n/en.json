@@ -421,7 +421,7 @@
       "exceptionReason": "The lowest available option is 1.40 USDC, above the current 1.00 USDC budget limit"
     },
     "chat": {
-      "host": "REAL HOST AI EXPERIENCE",
+      "host": "LOCAL HOST AI DEMO",
       "title": "Buy directly inside an AI conversation",
       "subtitle": "Users never need to open the Treasury dashboard. The Skill detects purchasing intent and applies the same budget, approval, and accounting rules.",
       "procurement": "Smart Procurement",
@@ -457,6 +457,11 @@
       "failedBody": "Treasury did not complete this request.",
       "tryAgain": "Check the local service and try again.",
       "approvalPurpose": "Latest Robinhood market data"
+      ,"readOnly": "Read-only query. The wallet was not called and no payment was created."
+      ,"dealsUnavailable": "The registry has {count} usable vendors ({names}), but live deals and quote feeds are not connected in this demo. No offer was invented and no purchase was started."
+      ,"noVendors": "There are no usable vendors in the registry. No purchase was started."
+      ,"purchaseNotConfigured": "I detected a purchase request, but this safe demo only configures the Robinhood market-data scenario. The wallet was not called and nothing was spent."
+      ,"help": "Ask me to purchase Robinhood market data, query the ledger, or inspect available vendors. Only explicit, configured purchase requests enter the payment flow."
     },
     "approvals": {
       "title": "Pending Approval",

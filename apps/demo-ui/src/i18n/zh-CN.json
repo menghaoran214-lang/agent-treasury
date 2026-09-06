@@ -421,7 +421,7 @@
       "exceptionReason": "最低可用方案 1.40 USDC，超过当前预算上限 1.00 USDC"
     },
     "chat": {
-      "host": "宿主 AI 真实使用场景",
+      "host": "宿主 AI 本地交互演示",
       "title": "直接在 AI 对话里完成采购",
       "subtitle": "用户不需要打开 Treasury 后台。Skill 会识别采购意图，并调用同一套预算、审批与记账规则。",
       "procurement": "智能采购",
@@ -457,6 +457,11 @@
       "failedBody": "Treasury 服务没有完成本次请求。",
       "tryAgain": "请确认本地服务正常后重试。",
       "approvalPurpose": "Robinhood 最新市场数据"
+      ,"readOnly": "只读查询，未调用钱包，也不会产生支付。"
+      ,"dealsUnavailable": "供应商库中有 {count} 个可用对象（{names}），但当前演示尚未接入实时优惠与报价源，因此不会编造优惠，也没有发起采购。"
+      ,"noVendors": "当前供应商库没有可用对象，也没有发起采购。"
+      ,"purchaseNotConfigured": "我识别到了采购需求，但当前安全演示只配置了 Robinhood 市场数据场景。这次没有调用钱包，也没有产生支出。"
+      ,"help": "你可以让我购买 Robinhood 市场数据、查询账单，或检查当前供应商。只有明确且已配置的采购请求才会进入支付流程。"
     },
     "approvals": {
       "title": "待我审批",

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { demoApi, type DemoState } from '../api/client';
-import { t } from '../i18n';
+import { accountingQueryApi, demoApi, preferenceApi, vendorApi, type DemoState } from '../api/client';
+import { i18n, t } from '../i18n';
 
 interface Props {
   notificationMode: 'detailed' | 'concise' | 'silent';
@@ -44,9 +44,40 @@ export default function ChatPage({ notificationMode, onShowToast, onApprovalRequ
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const prompt = input.trim(); if (!prompt || running) return;
-    setMessages(current => [...current, { role: 'user', text: prompt }, { role: 'assistant', text: t('v2.chat.accepted') }]);
+    setMessages(current => [...current, { role: 'user', text: prompt }]);
     setInput('');
-    try { await runPurchase(); } catch { setRunning(false); onException({ title: t('v2.chat.failed'), description: t('v2.chat.failedBody'), reason: t('v2.chat.tryAgain') }); }
+    const ledgerIntent = /(账单|账本|花了多少|支出|消费|付款记录|交易记录|ledger|spend|spent|transaction)/i.test(prompt);
+    const dealIntent = /(优惠|折扣|便宜|报价|比价|促销|deal|discount|offer|quote)/i.test(prompt);
+    const purchaseIntent = /(买|购买|采购|支付|付款|buy|purchase|pay)/i.test(prompt);
+    try {
+      if (ledgerIntent) {
+        const preference = await preferenceApi.get();
+        const result = await accountingQueryApi.ask(prompt, preference.quote_currency, i18n.lang);
+        setMessages(current => [...current, { role: 'assistant', kind: 'result', text: `${result.answer.text}\n${t('v2.chat.readOnly')}` }]);
+        return;
+      }
+      if (dealIntent) {
+        const vendors = await vendorApi.list();
+        const usable = vendors.filter(vendor => ['verified', 'usable'].includes(vendor.status));
+        setMessages(current => [...current, { role: 'assistant', text: usable.length
+          ? t('v2.chat.dealsUnavailable', { count: usable.length, names: usable.slice(0, 3).map(vendor => vendor.name).join('、') })
+          : t('v2.chat.noVendors') }]);
+        return;
+      }
+      if (purchaseIntent && /robinhood/i.test(prompt)) {
+        setMessages(current => [...current, { role: 'assistant', text: t('v2.chat.accepted') }]);
+        await runPurchase();
+        return;
+      }
+      if (purchaseIntent) {
+        setMessages(current => [...current, { role: 'assistant', text: t('v2.chat.purchaseNotConfigured') }]);
+        return;
+      }
+      setMessages(current => [...current, { role: 'assistant', text: t('v2.chat.help') }]);
+    } catch {
+      setRunning(false);
+      onException({ title: t('v2.chat.failed'), description: t('v2.chat.failedBody'), reason: t('v2.chat.tryAgain') });
+    }
   };
 
   const showApproval = () => onApprovalRequired({ request_id: 'demo-preview-chat', amount: 2.6, vendor_name: 'DataPro', requester: 'Research Agent', purpose: t('v2.chat.approvalPurpose'), risk: 'low', auto_pay_limit: 1 });
