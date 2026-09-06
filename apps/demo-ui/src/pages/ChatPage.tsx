@@ -12,6 +12,7 @@ interface Props {
 type Message = { role: 'user' | 'assistant'; text: string; kind?: 'normal' | 'result' };
 
 export default function ChatPage({ notificationMode, onShowToast, onApprovalRequired, onException }: Props) {
+  const videoDemo = new URLSearchParams(window.location.search).get('videoDemo') === '1';
   const [input, setInput] = useState(t('v2.chat.defaultPrompt'));
   const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', text: t('v2.chat.welcome') }]);
   const [state, setState] = useState<DemoState | null>(null);
@@ -54,15 +55,20 @@ export default function ChatPage({ notificationMode, onShowToast, onApprovalRequ
 
   return <div className="host-chat-page">
     <header className="host-chat-heading"><div><span className="eyebrow">{t('v2.chat.host')}</span><h1>{t('v2.chat.title')}</h1><p>{t('v2.chat.subtitle')}</p></div><span className="host-skill-status"><i /> Agent Treasury Skill · {t('v2.chat.connected')}</span></header>
+    <div className="host-role-strip">
+      <div><b>{t('v2.chat.procurement')}</b><span>{t('v2.chat.procurementDesc')}</span></div>
+      <div><b>{t('v2.chat.finance')}</b><span>{t('v2.chat.financeDesc')}</span></div>
+      <div><b>{t('v2.chat.accounting')}</b><span>{t('v2.chat.accountingDesc')}</span></div>
+    </div>
     <div className="host-chat-layout">
-      <aside className="host-chat-sidebar"><b>{t('v2.chat.history')}</b><button className="active">Robinhood {t('v2.chat.marketData')}</button><button>{t('v2.chat.research')}</button><button>{t('v2.chat.monthlySpend')}</button><div className="host-demo-note">{t('v2.chat.demoNote')}</div></aside>
+      <aside className="host-chat-sidebar"><b>{t('v2.chat.history')}</b><button className="active">Robinhood {t('v2.chat.marketData')}</button><button>{t('v2.chat.research')}</button><button>{t('v2.chat.monthlySpend')}</button>{videoDemo && <div className="host-demo-note">{t('v2.chat.demoNote')}</div>}</aside>
       <section className="host-chat-thread">
         <div className="host-chat-messages">
           {messages.map((message, index) => <div key={index} className={`host-message ${message.role} ${message.kind ?? ''}`}><span>{message.role === 'assistant' ? 'M' : t('v2.chat.you')}</span><p>{message.text}</p></div>)}
           {running && <div className="treasury-progress"><div className="progress-head"><span className="spinner"/><b>{t('v2.chat.processing')}</b></div><div className="progress-steps">{['discovery','policy','payment','receipt'].map((key, index) => { const phases=['discovery','policy','payment','receipt']; const current=Math.max(0,phases.indexOf(phase ?? 'discovery')); return <span className={index <= current ? 'done' : ''} key={key}>{index < current ? '✓ ' : ''}{t(`v2.chat.${key}`)}</span> })}</div></div>}
         </div>
         <form className="host-chat-composer" onSubmit={submit}><input value={input} onChange={event => setInput(event.target.value)} aria-label={t('v2.chat.input')} placeholder={t('v2.chat.placeholder')}/><button disabled={running}>{running ? '…' : '↑'}</button></form>
-        <div className="host-scenarios"><span>{t('v2.chat.preview')}</span><button onClick={() => setInput(t('v2.chat.defaultPrompt'))}>{t('v2.chat.auto')}</button><button onClick={showApproval}>{t('v2.chat.approval')}</button><button onClick={showBlocked}>{t('v2.chat.blocked')}</button></div>
+        {videoDemo && <div className="host-scenarios"><span>{t('v2.chat.preview')}</span><button onClick={() => setInput(t('v2.chat.defaultPrompt'))}>{t('v2.chat.auto')}</button><button onClick={showApproval}>{t('v2.chat.approval')}</button><button onClick={showBlocked}>{t('v2.chat.blocked')}</button></div>}
       </section>
     </div>
   </div>;

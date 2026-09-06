@@ -15,7 +15,7 @@ import ApprovalModal from './components/ApprovalModal';
 import ExceptionModal from './components/ExceptionModal';
 import { eventApi, ledgerApi, policyApi, type TreasuryEvent } from './api/client';
 
-export type Page = 'setup' | 'chat' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
+export type Page = 'setup' | 'host' | 'chat' | 'decision' | 'approvals' | 'ledger' | 'receipts' | 'receipt' | 'vendors' | 'reports' | 'settings';
 
 interface AppState {
   page: Page;
@@ -64,7 +64,7 @@ export default function App() {
   };
   const pageFromHash = (): Page => {
     const candidate = window.location.hash.replace(/^#\/?/, '').split('/')[0];
-    return (['setup', 'chat', 'decision', 'approvals', 'ledger', 'receipts', 'receipt', 'vendors', 'reports', 'settings'] as Page[]).includes(candidate as Page)
+    return (['setup', 'host', 'chat', 'decision', 'approvals', 'ledger', 'receipts', 'receipt', 'vendors', 'reports', 'settings'] as Page[]).includes(candidate as Page)
       ? candidate as Page
       : 'setup';
   };
@@ -181,6 +181,20 @@ export default function App() {
 
   if (!state.setupDone) {
     return <SetupPage onDone={handleSetupDone} />;
+  }
+
+  if (state.page === 'host') {
+    return <div className="embedded-host-shell">
+      <ChatPage
+        notificationMode={state.notificationMode}
+        onShowToast={showToast}
+        onApprovalRequired={(req) => setState(s => ({ ...s, approvalRequest: req }))}
+        onException={(exc) => setState(s => ({ ...s, exception: exc }))}
+      />
+      <ToastContainer toasts={state.toasts} onRemove={removeToast} />
+      {state.approvalRequest && <ApprovalModal request={state.approvalRequest} onClose={() => setState(s => ({ ...s, approvalRequest: null }))} onApproved={(receiptId) => { setState(s => ({ ...s, approvalRequest: null })); if (receiptId) openReceipt(receiptId); }} />}
+      {state.exception && <ExceptionModal exception={state.exception} onClose={() => setState(s => ({ ...s, exception: null }))} />}
+    </div>;
   }
 
   return (

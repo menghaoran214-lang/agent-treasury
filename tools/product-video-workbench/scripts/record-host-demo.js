@@ -12,7 +12,7 @@ const context = await browser.newContext({
   recordVideo: { dir: out, size: { width: 1920, height: 1080 } },
 });
 const page = await context.newPage();
-await page.goto('http://127.0.0.1:3333/#chat');
+await page.goto('http://127.0.0.1:3333/?videoDemo=1#host');
 await page.evaluate(() => { localStorage.setItem('treasury-lang', 'zh-CN'); localStorage.setItem('treasury-setup-done', '1'); });
 await page.reload();
 await page.screenshot({ path: path.join(out, '01-chat-ready.png') });
@@ -40,7 +40,7 @@ if (video) {
 
 const mobile = await chromium.launch({ headless: true });
 const mobilePage = await mobile.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
-await mobilePage.goto('http://127.0.0.1:3333/#chat');
+await mobilePage.goto('http://127.0.0.1:3333/#host');
 await mobilePage.evaluate(() => { localStorage.setItem('treasury-lang', 'zh-CN'); localStorage.setItem('treasury-setup-done', '1'); });
 await mobilePage.reload();
 await mobilePage.screenshot({ path: path.join(out, '05-mobile-chat.png'), fullPage: true });

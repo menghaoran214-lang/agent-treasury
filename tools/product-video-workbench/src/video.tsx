@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, Audio, Img, interpolate, OffthreadVideo, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Audio, Img, interpolate, staticFile, useCurrentFrame} from 'remotion';
 
 const C={bg:'#070d13',panel:'#0e1822',line:'#25384a',gold:'#f5ba16',white:'#f5f7fa',muted:'#91a0b2',green:'#35d58a',red:'#ff5360'};
 const fade=(f:number,a:number,b:number)=>interpolate(f,[a,a+12,b-12,b],[0,1,1,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'});
@@ -29,10 +29,14 @@ const ChatScene=({approval=false,success=false,blocked=false}:{approval?:boolean
 const PhoneScene=()=> <AbsoluteFill style={{background:'linear-gradient(125deg,#071019,#0d2030)',color:C.white,fontFamily:'Arial, Microsoft YaHei',display:'grid',gridTemplateColumns:'1fr 600px',padding:'70px 150px',alignItems:'center'}}><div><Logo/><div style={{fontSize:66,fontWeight:900,lineHeight:1.15,marginTop:70}}>一句话发起采购<br/><span style={{color:C.gold}}>结果回到原对话</span></div><p style={{fontSize:25,color:C.muted,lineHeight:1.7}}>手机、桌面或任何接入 Treasury Skill 的 AI，<br/>都使用同一套预算、审批与记账规则。</p></div><div style={{width:430,height:880,borderRadius:62,border:'10px solid #243241',background:'#071019',boxShadow:'0 40px 100px #000',padding:28,justifySelf:'center'}}><div style={{width:130,height:28,borderRadius:20,background:'#1c2935',margin:'0 auto 50px'}}/><div style={{color:C.muted,fontSize:17}}>AI 助手</div><div style={{marginTop:40,background:'#263747',padding:20,borderRadius:'22px 22px 4px 22px',fontSize:21}}>帮我买一份 Robinhood 最新市场数据。</div><div style={{marginTop:28,background:'#102219',border:`1px solid ${C.green}66`,padding:20,borderRadius:22,fontSize:19,lineHeight:1.6}}><b style={{color:C.green}}>✓ 已完成采购</b><br/>0.30 USDT · BSC<br/>数据与摘要已返回</div></div></AbsoluteFill>;
 
 const ProofScene=()=> <AbsoluteFill style={{background:C.bg,padding:50,color:C.white,fontFamily:'Arial, Microsoft YaHei'}}><div style={{display:'flex',justifyContent:'space-between'}}><Logo/><Tag color={C.green}>后台自动完成 · 用户无需停留</Tag></div><Img src={staticFile('ledger.png')} style={{width:1500,margin:'48px auto 0',borderRadius:22,border:`1px solid ${C.line}`,boxShadow:'0 30px 90px #000'}}/></AbsoluteFill>;
-const RealHostScene=()=> <AbsoluteFill style={{background:C.bg,padding:34,color:C.white,fontFamily:'Arial, Microsoft YaHei'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}><Logo/><Tag color={C.green}>真实本地交互录制 · Mock Payment</Tag></div><OffthreadVideo muted playbackRate={0.48} src={staticFile('host-ai-flow.webm')} style={{width:'100%',height:940,objectFit:'contain',borderRadius:18,border:`1px solid ${C.line}`,background:'#05090d'}}/></AbsoluteFill>;
+const HostStateScene=({file,label,color=C.green}:{file:string;label:string;color?:string})=> <AbsoluteFill style={{background:C.bg,padding:34,color:C.white,fontFamily:'Arial, Microsoft YaHei'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}><Logo/><Tag color={color}>{label}</Tag></div><Img src={staticFile(file)} style={{width:'100%',height:940,objectFit:'contain',borderRadius:18,border:`1px solid ${C.line}`,background:'#05090d'}}/></AbsoluteFill>;
 
 const TitleScene=()=> <AbsoluteFill style={{background:'radial-gradient(circle at center,#15293a,#05090d 65%)',color:C.white,fontFamily:'Arial, Microsoft YaHei',display:'grid',placeItems:'center',textAlign:'center'}}><div><Logo/><div style={{fontSize:80,fontWeight:950,lineHeight:1.15,marginTop:70}}>钱包负责付款<br/><span style={{color:C.gold}}>它负责判断该不该付</span></div><div style={{fontSize:29,color:C.muted,marginTop:34}}>AI 的财务 · 采购 · 会计</div></div></AbsoluteFill>;
 
 export const AgentTreasuryV2:React.FC=()=>{const f=useCurrentFrame(); const scenes=[
- {a:0,b:210,node:<TitleScene/>},{a:210,b:480,node:<PhoneScene/>},{a:480,b:1530,node:<RealHostScene/>},{a:1530,b:1860,node:<ProofScene/>},{a:1860,b:2100,node:<TitleScene/>}
+ {a:0,b:390,node:<TitleScene/>},{a:390,b:600,node:<PhoneScene/>},{a:600,b:810,node:<HostStateScene file="host-chat-ready.png" label="在宿主 AI 中发起采购"/>},
+ {a:810,b:1020,node:<HostStateScene file="host-auto-complete.png" label="自动采购完成 · 结果返回原对话"/>},
+ {a:1020,b:1260,node:<HostStateScene file="host-center-approval.png" label="超出权限 · 等待用户确认" color={C.gold}/>},
+ {a:1260,b:1425,node:<HostStateScene file="host-blocked.png" label="策略阻断 · 资金没有移动" color={C.red}/>},
+ {a:1425,b:1860,node:<ProofScene/>},{a:1860,b:2100,node:<TitleScene/>}
 ]; return <AbsoluteFill style={{background:C.bg}}><Audio src={staticFile('narration.mp3')}/>{scenes.map((s,i)=><AbsoluteFill key={i} style={{opacity:fade(f,s.a,s.b)}}>{s.node}</AbsoluteFill>)}</AbsoluteFill>}
