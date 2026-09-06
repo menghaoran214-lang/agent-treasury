@@ -109,7 +109,7 @@ async function runDemoFlow(runId: string, policy: Policy) {
       single_transaction_limit: 5,
       daily_budget: 20,
       monthly_budget: 100,
-      allowed_categories: ['market_data', 'api', 'model', 'compute'],
+      allowed_categories: ['market_data', 'api', 'model', 'compute', 'skill', 'mcp', 'saas', 'other'],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -345,7 +345,7 @@ app.get('/api/policy', (_req, res) => {
       single_transaction_limit: 5.0,
       daily_budget: 20.0,
       monthly_budget: 100.0,
-      allowed_categories: ['market_data', 'api', 'model', 'compute'],
+      allowed_categories: ['market_data', 'api', 'model', 'compute', 'skill', 'mcp', 'saas', 'other'],
       notification_mode: 'detailed',
       updated_at: new Date().toISOString(),
     });
@@ -378,7 +378,7 @@ app.post('/api/policy', (req, res) => {
       single_transaction_limit: 5.0,
       daily_budget: 20.0,
       monthly_budget: 100.0,
-      allowed_categories: ['market_data', 'api', 'model', 'compute'],
+      allowed_categories: ['market_data', 'api', 'model', 'compute', 'skill', 'mcp', 'saas', 'other'],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

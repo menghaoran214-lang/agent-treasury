@@ -7,7 +7,7 @@ interface SetupDone {
 }
 
 const STRATEGIES = ['economy', 'balanced', 'performance'] as const;
-const CATEGORIES = ['market_data', 'api', 'model', 'compute'];
+const ALL_CATEGORIES = ['market_data', 'api', 'model', 'compute', 'skill', 'mcp', 'saas', 'other'];
 
 export default function SetupPage({ onDone }: { onDone: SetupDone }) {
   const [lang, setLang] = useState<Lang>(i18n.lang);
@@ -19,15 +19,8 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
   const [singleLimit, setSingleLimit] = useState(5);
   const [dailyBudget, setDailyBudget] = useState(20);
   const [monthlyBudget, setMonthlyBudget] = useState(100);
-  const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
   const [notificationMode, setNotificationMode] = useState<'detailed' | 'concise' | 'silent'>('detailed');
   const [submitting, setSubmitting] = useState(false);
-
-  const toggleCategory = (cat: string) => {
-    setCategories(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    );
-  };
 
   const handleLangChange = (nextLang: Lang) => {
     i18n.setLang(nextLang);
@@ -43,7 +36,10 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
         single_transaction_limit: singleLimit,
         daily_budget: dailyBudget,
         monthly_budget: monthlyBudget,
-        allowed_categories: categories,
+        // First-run setup is intentionally unrestricted by purchase type.
+        // Advanced policy editing can narrow this list later without making
+        // new users understand internal resource taxonomy during onboarding.
+        allowed_categories: ALL_CATEGORIES,
         notification_mode: notificationMode,
       });
       onDone(notificationMode);
@@ -84,10 +80,10 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
             {STRATEGIES.map(s => (
               <button
                 key={s}
-                className={`card${strategy === s ? ' selected' : ''}`}
+                className={`card setup-strategy-card${strategy === s ? ' selected' : ''}`}
                 style={{
                   cursor: 'pointer', textAlign: 'left', border: strategy === s ? '2px solid var(--yellow)' : '1px solid var(--border)',
-                  background: strategy === s ? 'var(--yellow-bg)' : 'var(--surface2)',
+                  background: strategy === s ? 'rgba(245, 184, 0, .06)' : 'var(--surface2)',
                 }}
                 onClick={() => setStrategy(s)}
               >
@@ -126,23 +122,6 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
                 onChange={e => setMonthlyBudget(parseFloat(e.target.value) || 0)} />
               <span className="form-hint">{t('setup.field.monthlyBudgetHint')}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Categories */}
-        <div className="setup-section">
-          <div className="setup-section-title">{t('setup.section.categories')}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                className={`btn btn-sm${categories.includes(cat) ? ' btn-primary' : ' btn-ghost'}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => toggleCategory(cat)}
-              >
-                {t(`setup.category.${cat}`)}
-              </button>
-            ))}
           </div>
         </div>
 

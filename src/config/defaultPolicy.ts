@@ -8,7 +8,7 @@ export const DEFAULT_POLICY: Policy = {
   single_transaction_limit: 5,
   daily_budget: 20,
   monthly_budget: 100,
-  allowed_categories: ['market_data', 'api', 'model', 'compute'],
+  allowed_categories: ['market_data', 'api', 'model', 'compute', 'skill', 'mcp', 'saas', 'other'],
   allowed_payment_routes: [{
     chain_id: '56',
     token_symbol: 'USDT',
