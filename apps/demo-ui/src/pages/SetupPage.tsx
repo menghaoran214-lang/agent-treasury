@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { t, i18n } from '../i18n';
+import { useEffect, useState } from 'react';
+import { t, i18n, type Lang } from '../i18n';
 import { policyApi } from '../api/client';
 
 interface SetupDone {
@@ -10,8 +10,9 @@ const STRATEGIES = ['economy', 'balanced', 'performance'] as const;
 const CATEGORIES = ['market_data', 'api', 'model', 'compute'];
 
 export default function SetupPage({ onDone }: { onDone: SetupDone }) {
+  const [lang, setLang] = useState<Lang>(i18n.lang);
   const [, rerender] = useState(0);
-  useState(() => i18n.subscribe(() => rerender(n => n + 1)));
+  useEffect(() => i18n.subscribe(() => rerender(n => n + 1)), []);
 
   const [strategy, setStrategy] = useState<'economy' | 'balanced' | 'performance'>('balanced');
   const [autoPayLimit, setAutoPayLimit] = useState(1);
@@ -26,6 +27,11 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
     setCategories(prev =>
       prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
     );
+  };
+
+  const handleLangChange = (nextLang: Lang) => {
+    i18n.setLang(nextLang);
+    setLang(nextLang);
   };
 
   const handleSubmit = async () => {
@@ -50,7 +56,22 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
   return (
     <div className="setup-container">
       <div className="setup-header">
-        <div className="setup-logo"><img src="/agent-treasury-mark.svg" alt="" /> Agent Treasury</div>
+        <div className="setup-header-bar">
+          <div className="setup-logo"><img src="/agent-treasury-mark.svg" alt="" /> Agent Treasury</div>
+          <div className="setup-language" role="group" aria-label="Language / 语言">
+            {(['zh-CN', 'en'] as Lang[]).map(option => (
+              <button
+                key={option}
+                type="button"
+                className={lang === option ? 'active' : ''}
+                aria-pressed={lang === option}
+                onClick={() => handleLangChange(option)}
+              >
+                {option === 'zh-CN' ? '简体中文' : 'English'}
+              </button>
+            ))}
+          </div>
+        </div>
         <h1 className="setup-title">{t('setup.title')}</h1>
         <p className="setup-sub">{t('setup.subtitle')}</p>
       </div>
@@ -119,7 +140,7 @@ export default function SetupPage({ onDone }: { onDone: SetupDone }) {
                 style={{ cursor: 'pointer' }}
                 onClick={() => toggleCategory(cat)}
               >
-                {cat}
+                {t(`setup.category.${cat}`)}
               </button>
             ))}
           </div>

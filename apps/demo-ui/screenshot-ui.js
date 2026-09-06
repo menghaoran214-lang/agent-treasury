@@ -56,6 +56,10 @@ try {
 
   await configure('zh-CN', false);
   await go('setup');
+  await page.getByRole('button', { name: 'English' }).click();
+  await page.getByRole('heading', { name: 'Configure Agent Treasury' }).waitFor();
+  await page.getByRole('button', { name: '简体中文' }).click();
+  await page.getByRole('heading', { name: '配置 Agent Treasury' }).waitFor();
   await capture('01-setup-zh.png');
 
   await configure('zh-CN', true);

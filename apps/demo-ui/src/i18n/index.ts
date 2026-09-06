@@ -32,7 +32,7 @@ function detectLang(): Lang {
   const stored = localStorage.getItem('treasury-lang') as Lang | null;
   if (stored && (stored === 'zh-CN' || stored === 'en')) return stored;
   const nav = navigator.language || '';
-  if (/zh[-_]?Hans?|中文/.test(nav)) return 'zh-CN';
+  if (/^zh(?:-|_|$)/i.test(nav) || /中文/.test(nav)) return 'zh-CN';
   return 'en';
 }
 
