@@ -12,25 +12,25 @@ Style: EN,Arial,18,&H00C6D0DA,&H000000FF,&HCC000000,&H70000000,0,0,0,0,100,100,0
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:05.50,ZH,,0,0,0,,AI 会花钱，钱包只会付款。
-Dialogue: 0,0:00:00.00,0:00:05.50,EN,,0,0,0,,AI spends. Wallets only pay.
-Dialogue: 0,0:00:05.50,0:00:11.50,ZH,,0,0,0,,谁来判断这笔钱该不该花？
-Dialogue: 0,0:00:05.50,0:00:11.50,EN,,0,0,0,,Who decides whether it should?
-Dialogue: 0,0:00:11.50,0:00:17.50,ZH,,0,0,0,,Agent Treasury：采购、财务、会计。
-Dialogue: 0,0:00:11.50,0:00:17.50,EN,,0,0,0,,Procurement, finance, and accounting for AI.
-Dialogue: 0,0:00:17.50,0:00:23.50,ZH,,0,0,0,,在熟悉的 AI 对话里，直接说出需求。
-Dialogue: 0,0:00:17.50,0:00:23.50,EN,,0,0,0,,Ask inside the AI you already use.
-Dialogue: 0,0:00:23.50,0:00:29.50,ZH,,0,0,0,,自动找供应商、比价格、选方案。
-Dialogue: 0,0:00:23.50,0:00:29.50,EN,,0,0,0,,Find vendors. Compare. Select.
-Dialogue: 0,0:00:29.50,0:00:35.50,ZH,,0,0,0,,小额低风险采购，自动完成。
-Dialogue: 0,0:00:29.50,0:00:35.50,EN,,0,0,0,,Low-risk purchases complete automatically.
-Dialogue: 0,0:00:35.50,0:00:42.00,ZH,,0,0,0,,超出权限，中央审批卡立即出现。
-Dialogue: 0,0:00:35.50,0:00:42.00,EN,,0,0,0,,Over the limit? Approval appears.
-Dialogue: 0,0:00:42.00,0:00:47.50,ZH,,0,0,0,,不符合规则，资金不会移动。
-Dialogue: 0,0:00:42.00,0:00:47.50,EN,,0,0,0,,Fail the rules? Funds never move.
-Dialogue: 0,0:00:47.50,0:00:55.00,ZH,,0,0,0,,数据回到对话，收据自动入账。
-Dialogue: 0,0:00:47.50,0:00:55.00,EN,,0,0,0,,Data returns. The receipt is recorded.
-Dialogue: 0,0:00:55.00,0:01:02.00,ZH,,0,0,0,,一句话查账，知道钱花在哪里。
-Dialogue: 0,0:00:55.00,0:01:02.00,EN,,0,0,0,,Ask the ledger where the money went.
-Dialogue: 0,0:01:02.00,0:01:09.50,ZH,,0,0,0,,让每一笔 AI 支出可控、可查、可追溯。
-Dialogue: 0,0:01:02.00,0:01:09.50,EN,,0,0,0,,Controlled. Visible. Traceable.
+Dialogue: 0,0:00:00.60,0:00:06.10,ZH,,0,0,0,,AI 会花钱，钱包只会付款。
+Dialogue: 0,0:00:00.60,0:00:06.10,EN,,0,0,0,,AI spends. Wallets only pay.
+Dialogue: 0,0:00:06.10,0:00:12.10,ZH,,0,0,0,,谁来判断这笔钱该不该花？
+Dialogue: 0,0:00:06.10,0:00:12.10,EN,,0,0,0,,Who decides whether it should?
+Dialogue: 0,0:00:12.10,0:00:18.10,ZH,,0,0,0,,Agent Treasury：采购、财务、会计。
+Dialogue: 0,0:00:12.10,0:00:18.10,EN,,0,0,0,,Procurement, finance, and accounting for AI.
+Dialogue: 0,0:00:18.10,0:00:24.10,ZH,,0,0,0,,在熟悉的 AI 对话里，直接说出需求。
+Dialogue: 0,0:00:18.10,0:00:24.10,EN,,0,0,0,,Ask inside the AI you already use.
+Dialogue: 0,0:00:24.10,0:00:30.10,ZH,,0,0,0,,自动找供应商、比价格、选方案。
+Dialogue: 0,0:00:24.10,0:00:30.10,EN,,0,0,0,,Find vendors. Compare. Select.
+Dialogue: 0,0:00:30.10,0:00:36.10,ZH,,0,0,0,,小额低风险采购，自动完成。
+Dialogue: 0,0:00:30.10,0:00:36.10,EN,,0,0,0,,Low-risk purchases complete automatically.
+Dialogue: 0,0:00:36.10,0:00:42.60,ZH,,0,0,0,,超出权限，中央审批卡立即出现。
+Dialogue: 0,0:00:36.10,0:00:42.60,EN,,0,0,0,,Over the limit? Approval appears.
+Dialogue: 0,0:00:42.60,0:00:48.10,ZH,,0,0,0,,不符合规则，资金不会移动。
+Dialogue: 0,0:00:42.60,0:00:48.10,EN,,0,0,0,,Fail the rules? Funds never move.
+Dialogue: 0,0:00:48.10,0:00:55.60,ZH,,0,0,0,,数据回到对话，收据自动入账。
+Dialogue: 0,0:00:48.10,0:00:55.60,EN,,0,0,0,,Data returns. The receipt is recorded.
+Dialogue: 0,0:00:55.60,0:01:02.60,ZH,,0,0,0,,一句话查账，知道钱花在哪里。
+Dialogue: 0,0:00:55.60,0:01:02.60,EN,,0,0,0,,Ask the ledger where the money went.
+Dialogue: 0,0:01:02.60,0:01:10.00,ZH,,0,0,0,,让每一笔 AI 支出可控、可查、可追溯。
+Dialogue: 0,0:01:02.60,0:01:10.00,EN,,0,0,0,,Controlled. Visible. Traceable.
