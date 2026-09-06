@@ -11,8 +11,8 @@ const proc = spawn(process.execPath, ['--import', 'tsx', 'src/server/unifiedServ
 });
 
 async function waitUntilReady() {
-  // Windows cold starts can spend several seconds loading tsx and native SQLite.
-  for (let attempt = 0; attempt < 100; attempt++) {
+  // A freshly extracted Windows package can spend longer on the first native-module load.
+  for (let attempt = 0; attempt < 300; attempt++) {
     try { if ((await fetch(`${base}/health`)).ok) return; } catch {}
     await new Promise(resolve => setTimeout(resolve, 100));
   }
